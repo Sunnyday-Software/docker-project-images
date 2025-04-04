@@ -2,7 +2,7 @@
 
 source .env
 
-COMPOSE_FILE="docker-compose.yml"
+COMPOSE_FILE="/docker-compose.yml"
 ROOT_DIR="dev/docker"
 
 # entra nella cartella root di docker build
