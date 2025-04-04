@@ -21,11 +21,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Rendi eseguibile lo script shell
+      - name: Rendi eseguibile gli script shell
         run: chmod +x ./dev/scripts/*.sh
 
       - name: Rendi eseguibile il binario project
-        run: chmod +x ./project
+        run: chmod +x ./dpm
 
       - name: 🚀 Esegui build
         run: ./dpm --env .env

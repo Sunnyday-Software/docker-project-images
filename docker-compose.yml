@@ -16,7 +16,8 @@ services:
     build:
       context: dev/docker/bash
       dockerfile: Dockerfile
-
+    volumes:
+      - ${HOST_PROJECT_PATH}:/workdir
 
   opentofu:
     image: ${DOCKERHUB_USERNAME}/opentofu:${MD5_OPENTOFU}
