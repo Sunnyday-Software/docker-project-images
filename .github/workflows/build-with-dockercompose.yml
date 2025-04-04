@@ -21,6 +21,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Stampa github.workspace
+        run: |
+          echo "github.workspace è valorizzato a: ${{ github.workspace }}"
+
       - name: Rendi eseguibile gli script shell
         run: chmod +x ./dev/scripts/*.sh
 
