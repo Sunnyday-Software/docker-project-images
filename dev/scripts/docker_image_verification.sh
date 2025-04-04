@@ -8,8 +8,8 @@ if [ ! -d "$BASE_PATH" ]; then
   exit 1
 fi
 
-if [ -z "$PROJECT_NAME" ]; then
-  echo "❌ La variabile ambientale PROJECT_NAME non è definita. Interrompo lo script!"
+if [ -z "$DOCKERHUB_USERNAME" ]; then
+  echo "❌ La variabile ambientale DOCKERHUB_USERNAME non è definita. Interrompo lo script!"
   exit 1
 fi
 
@@ -20,7 +20,7 @@ docker_images_json=$(docker images --format '{{json .}}' | jq -s '.')
 for folder in "$BASE_PATH"/*/; do
   folder=${folder%/}  # rimuove eventuale slash finale
   image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')
-  full_image_name="${PROJECT_NAME}-${image_name}"
+  full_image_name="${DOCKERHUB_USERNAME}-${image_name}"
 
   md5_var="MD5_$(echo "$image_name" | tr '[:lower:]' '[:upper:]')"
   expected_md5=${!md5_var}
