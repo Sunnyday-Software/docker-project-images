@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'dev/docker/**'
 
 jobs:
   docker-compose-md5-build:
@@ -24,7 +22,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Rendi eseguibile lo script shell
-        run: chmod +x ./dev/scripts/gen-md5-and-build.sh
+        run: chmod +x ./dev/scripts/*.sh
+
+      - name: Rendi eseguibile il binario project
+        run: chmod +x ./project
 
       - name: 🚀 Esegui script MD5 & Docker Compose build/push
-        run: ./dev/scripts/gen-md5-and-build.sh
+        run: ./project

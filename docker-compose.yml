@@ -1,8 +1,15 @@
 
-version: '3.9'
-
-
 services:
+
+  make:
+    image: ${DOCKERHUB_USERNAME}-make:${MD5_MAKE}
+    build:
+      context: ./dev/docker/make
+      dockerfile: Dockerfile
+      tags:
+        - latest
+    volumes:
+      - ${HOST_PROJECT_PATH}:/workdir
 
   bash:
     image: ${DOCKERHUB_USERNAME}-bash:${MD5_BASH}
