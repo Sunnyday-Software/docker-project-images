@@ -1,0 +1,24 @@
+
+version: '3.9'
+
+
+services:
+
+  bash:
+    image: ${DOCKERHUB_USERNAME}-bash:${MD5_BASH}
+    build:
+      context: dev/docker/bash
+      dockerfile: Dockerfile
+
+
+  opentofu:
+    image: ${DOCKERHUB_USERNAME}-opentofu:${MD5_OPENTOFU}
+    build:
+      context: ./dev/docker/opentofu
+      dockerfile: Dockerfile
+      args:
+        DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
+        MD5_BASH: ${MD5_BASH}
+        OPENTOFU_RELEASE: ${OPENTOFU_RELEASE}
+
+

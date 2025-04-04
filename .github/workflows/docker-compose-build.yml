@@ -1,0 +1,30 @@
+name: Docker Compose MD5 Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dev/docker/**'
+
+jobs:
+  docker-compose-md5-build:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Rendi eseguibile lo script shell
+        run: chmod +x ./dev/scripts/gen-md5-and-build.sh
+
+      - name: 🚀 Esegui script MD5 & Docker Compose build/push
+        run: ./dev/scripts/gen-md5-and-build.sh
