@@ -30,5 +30,8 @@ jobs:
       - name: 🚀 Esegui build
         run: ./dpm --env .env
 
+      - name: 🚀 Debug env
+        run: cat .env
+
       - name: 🚀 Esegui push
         run: ./dev/scripts/push-images.sh
