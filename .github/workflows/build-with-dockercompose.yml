@@ -27,6 +27,12 @@ jobs:
       - name: Rendi eseguibile il binario project
         run: chmod +x ./dpm
 
+      - name: Lista dei file della workspace per debug
+        run: |
+          pwd
+          ls -lah
+          cat .env
+
       - name: 🚀 Esegui build
         run: ./dpm --env .env
 
