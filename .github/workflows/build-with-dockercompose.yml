@@ -36,6 +36,12 @@ jobs:
       - name: 🚀 Esegui build
         run: ./dpm --env .env
 
+      - name: Lista dei file della workspace per debug
+        run: |
+          pwd
+          ls -lah
+          cat .env
+
       - name: 🚀 Debug env
         run: ./dev/scripts/debug-env.sh
 
