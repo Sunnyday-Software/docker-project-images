@@ -2,7 +2,7 @@
 services:
 
   make:
-    image: ${DOCKERHUB_USERNAME}-make:${MD5_MAKE}
+    image: ${DOCKERHUB_USERNAME}/make:${MD5_MAKE}
     build:
       context: ./dev/docker/make
       dockerfile: Dockerfile
@@ -12,14 +12,14 @@ services:
       - ${HOST_PROJECT_PATH}:/workdir
 
   bash:
-    image: ${DOCKERHUB_USERNAME}-bash:${MD5_BASH}
+    image: ${DOCKERHUB_USERNAME}/bash:${MD5_BASH}
     build:
       context: dev/docker/bash
       dockerfile: Dockerfile
 
 
   opentofu:
-    image: ${DOCKERHUB_USERNAME}-opentofu:${MD5_OPENTOFU}
+    image: ${DOCKERHUB_USERNAME}/opentofu:${MD5_OPENTOFU}
     build:
       context: ./dev/docker/opentofu
       dockerfile: Dockerfile
