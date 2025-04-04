@@ -16,6 +16,8 @@ services:
     build:
       context: dev/docker/bash
       dockerfile: Dockerfile
+      tags:
+        - latest
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
 
@@ -24,6 +26,8 @@ services:
     build:
       context: ./dev/docker/opentofu
       dockerfile: Dockerfile
+      tags:
+        - latest
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         MD5_BASH: ${MD5_BASH}
