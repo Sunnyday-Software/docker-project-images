@@ -28,7 +28,7 @@ jobs:
         run: chmod +x ./project
 
       - name: 🚀 Esegui build
-        run: ./project
+        run: ./dpm --env .env
 
       - name: 🚀 Esegui push
-        run: ./dev/scripts/gen-md5-and-build.sh
+        run: ./dev/scripts/push-images.sh
