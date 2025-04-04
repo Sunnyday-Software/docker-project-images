@@ -38,5 +38,5 @@ jobs:
           file: ./dev/docker/${{ matrix.folder }}/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/tuarepository:${{ matrix.folder }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/tuarepository:${{ matrix.folder }}-${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.folder }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.folder }}:${{ github.sha }}
