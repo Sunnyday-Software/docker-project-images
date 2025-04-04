@@ -31,7 +31,7 @@ jobs:
         run: ./dpm --env .env
 
       - name: 🚀 Debug env
-        run: cat .env
+        run: ./dev/scripts/debug-env.sh
 
       - name: 🚀 Esegui push
         run: ./dev/scripts/push-images.sh
