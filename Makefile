@@ -20,7 +20,7 @@ build-images: # costruisce le immagini docker
 always: build-images
 
 debug-in-vm:
-	$(DOCKER_RUN) bash ./dev/scripts/debug-env.sh
+	./dev/scripts/debug-env.sh
 
 help: always
 	@echo "\n Available tasks:\n"
