@@ -2,32 +2,35 @@
 services:
 
   make:
-    image: ${DOCKERHUB_USERNAME}/make:${MD5_MAKE}
+    image: ${DOCKERHUB_USERNAME}/make
     build:
       context: ./dev/docker/make
       dockerfile: Dockerfile
       tags:
         - latest
+        - ${MD5_MAKE}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
 
   bash:
-    image: ${DOCKERHUB_USERNAME}/bash:${MD5_BASH}
+    image: ${DOCKERHUB_USERNAME}/bash
     build:
       context: dev/docker/bash
       dockerfile: Dockerfile
       tags:
         - latest
+        - ${MD5_BASH}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
 
   opentofu:
-    image: ${DOCKERHUB_USERNAME}/opentofu:${MD5_OPENTOFU}
+    image: ${DOCKERHUB_USERNAME}/opentofu
     build:
       context: ./dev/docker/opentofu
       dockerfile: Dockerfile
       tags:
         - latest
+        - ${MD5_OPENTOFU}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         MD5_BASH: ${MD5_BASH}
