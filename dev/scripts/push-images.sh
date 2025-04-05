@@ -36,7 +36,16 @@ for dir in ${ROOT_DIR}/*/; do
   dir_name=$(basename "$dir")
   VAR_NAME="MD5_$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')"
   TAG="${!VAR_NAME}"
-  echo "Pushing image ${DOCKERHUB_USERNAME}/${dir_name}:${TAG}"
+  version_file="dev/docker_versions/${dir_name}.txt"
+  v_full_version=""
+  if [ -f "${version_file}" ]; then
+    v_full_version=$(awk -F= '/^v_full_version=/ {print $2}' "${version_file}")
+  fi
+
+  echo "Pushing image ${DOCKERHUB_USERNAME}/${dir_name}:${v_full_version}"
   docker tag ${DOCKERHUB_USERNAME}/${dir_name}:${TAG} ${DOCKERHUB_USERNAME}/${dir_name}:latest
+  if [ -n "$v_full_version" ]; then
+    docker tag ${DOCKERHUB_USERNAME}/${dir_name}:${v_full_version} ${DOCKERHUB_USERNAME}/${dir_name}:latest
+  fi
   docker push ${DOCKERHUB_USERNAME}/${dir_name}:${TAG}
 done
