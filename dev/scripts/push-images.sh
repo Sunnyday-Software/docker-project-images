@@ -5,7 +5,7 @@ source .env
 COMPOSE_FILE="./docker-compose.yml"
 ROOT_DIR="dev/docker"
 
-
+env
 tree -apug -I .git -I .idea
 docker compose -f "$COMPOSE_FILE" push
 
