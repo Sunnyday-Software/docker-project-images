@@ -18,3 +18,5 @@ echo "----------------------------"
 echo "file .env"
 cat  ./.env
 echo "----------------------------"
+echo "ls -lah"
+ls -lah
