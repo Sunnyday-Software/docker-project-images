@@ -15,3 +15,12 @@ function can_ssh_without_password {
         return 1
     fi
 }
+
+
+SSH_KEY="$HOME/.ssh/id_rsa"
+
+# Generate SSH key if it does not exist
+if [ ! -f "$SSH_KEY" ]; then
+    echo "SSH key not found, generating a new SSH key..."
+    ssh-keygen -t rsa -b 4096 -f "$SSH_KEY" -N ""
+fi

@@ -78,5 +78,7 @@ USER $USER
 
 ENV PATH="$HOME_DIR/.local/bin:${PATH}"
 
+USER root
+
 # Imposta l'entrypoint per eseguire lo script passato come parametro
 CMD ["echo", "Nessuno script specificato."]
