@@ -33,7 +33,6 @@ jobs:
           cp ~/.docker/config.json ${{ github.workspace }}/.docker/config.json
           echo "DOCKER_CONFIG=${{ github.workspace }}/.docker" >> $GITHUB_ENV
           cat ${{ github.workspace }}/.docker/config.json
-          
 
       - name: Rendi eseguibile gli script shell
         run: chmod +x ./dev/scripts/*.sh
@@ -41,11 +40,8 @@ jobs:
       - name: Rendi eseguibile il binario project
         run: chmod +x ./dpm
 
-      - name: Lista dei file della workspace per debug
-        run: |
-          pwd
-          tree -apug -I .git -I .idea 
-          cat .env
+      - name: 🚀 Debug docker-in-docker env
+        run: ./dpm --env .env debug-in-vm
 
       - name: 🚀 Esegui build
         run: ./dpm --env .env

@@ -18,5 +18,5 @@ echo "----------------------------"
 echo "file .env"
 cat  ./.env
 echo "----------------------------"
-echo "ls -lah"
-ls -lah
+echo "tree -apug -I .git -I .idea"
+tree -apug -I .git -I .idea
