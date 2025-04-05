@@ -31,7 +31,7 @@ jobs:
         run: ./dpm --env .env debug-in-vm
 
       - name: 🚀 Esegui push
-        run: ./dpm --env .env push-images
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: ./dpm --env .env push-images
