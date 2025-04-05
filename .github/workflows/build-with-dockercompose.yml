@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir -p ${{ github.workspace }}/.docker
           cp ~/.docker/config.json ${{ github.workspace }}/.docker/config.json
-          echo "DOCKER_CONFIG=/workspace/.docker" >> $GITHUB_ENV
+          echo "DOCKER_CONFIG=/workdir/.docker" >> $GITHUB_ENV
           cat ${{ github.workspace }}/.docker/config.json
 
       - name: Rendi eseguibile gli script shell
