@@ -25,13 +25,13 @@ jobs:
         run: ./dpm --env .env debug-in-vm
 
       - name: 🚀 Esegui build
-        run: ./dpm --env .env
+        run: ./dpm --env .env --skip-env-write
 
       - name: 🚀 Debug docker-in-docker env
-        run: ./dpm --env .env debug-in-vm
+        run: ./dpm --env .env --skip-env-write debug-in-vm
 
       - name: 🚀 Esegui push
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: ./dpm --env .env push-images
+        run: ./dpm --env .env --skip-env-write push-images
