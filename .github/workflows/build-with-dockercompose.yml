@@ -27,6 +27,13 @@ jobs:
         run: |
           echo "github.workspace è valorizzato a: ${{ github.workspace }}"
 
+      - name: Imposta DOCKER_CONFIG nel workspace
+        run: |
+          mkdir -p ${{ github.workspace }}/.docker
+          cp ~/.docker/config.json ${{ github.workspace }}/.docker/config.json
+          echo "DOCKER_CONFIG=${{ github.workspace }}/.docker" >> $GITHUB_ENV
+          
+
       - name: Rendi eseguibile gli script shell
         run: chmod +x ./dev/scripts/*.sh
 
