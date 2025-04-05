@@ -37,5 +37,5 @@ cd "$ROOT_DIR" || { echo "Directory non trovata: $ROOT_DIR"; exit 1; }
 
 for dir in ${ROOT_DIR}/; do
   dir_name=$(basename "$dir")
-  docker push ${dir_name} --include-deps
+  docker push %{DOCKERHUB_USERNAME}/${dir_name} --include-deps
 done
