@@ -63,4 +63,4 @@ jobs:
         run: ./dpm --env .env debug-in-vm
 
       - name: 🚀 Esegui push
-        run: ./dev/scripts/push-images.sh
+        run: ./dpm --env .env push-images

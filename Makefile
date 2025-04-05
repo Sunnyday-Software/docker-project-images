@@ -22,6 +22,9 @@ always: build-images
 debug-in-vm:
 	./dev/scripts/debug-env.sh
 
+push-images:
+	./dev/scripts/push-images.sh
+
 help: always
 	@echo "\n Available tasks:\n"
 	@{ \
