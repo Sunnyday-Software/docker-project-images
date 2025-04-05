@@ -5,11 +5,15 @@ source .env
 COMPOSE_FILE="${HOST_PROJECT_PATH}/docker-compose.yml"
 ROOT_DIR="dev/docker"
 
-# entra nella cartella root di docker build
-cd "$ROOT_DIR" || { echo "Directory non trovata: $ROOT_DIR"; exit 1; }
 
-for dir in */; do
-  dir_name=$(basename "$dir")
-  docker compose -f "$COMPOSE_FILE" push ${dir_name} --include-deps
-done
+tree -pug -I .idea -I .github
+docker compose -f "$COMPOSE_FILE" push
+
+# entra nella cartella root di docker build
+#cd "$ROOT_DIR" || { echo "Directory non trovata: $ROOT_DIR"; exit 1; }
+#
+#for dir in */; do
+#  dir_name=$(basename "$dir")
+#  docker compose -f "$COMPOSE_FILE" push ${dir_name} --include-deps
+#done
 
