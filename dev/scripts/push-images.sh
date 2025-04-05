@@ -9,6 +9,10 @@ cat $DOCKER_CONFIG/config.json
 
 env
 tree -apug -I .git -I .idea
+    docker info
+    docker context ls
+    docker compose config
+
 docker compose -f "$COMPOSE_FILE" push
 
 # entra nella cartella root di docker build
