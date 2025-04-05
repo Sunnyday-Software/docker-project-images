@@ -9,9 +9,12 @@ cat $DOCKER_CONFIG/config.json
 
 env
 tree -apug -I .git -I .idea
-    docker info
-    docker context ls
-    docker compose config
+echo "docker info------------------------------------"
+docker info
+echo "docker context ls------------------------------"
+docker context ls
+echo "docker compose config--------------------------"
+docker compose config
 
 docker compose -f "$COMPOSE_FILE" push
 
