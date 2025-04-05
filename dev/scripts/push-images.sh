@@ -10,6 +10,6 @@ cd "$ROOT_DIR" || { echo "Directory non trovata: $ROOT_DIR"; exit 1; }
 
 for dir in */; do
   dir_name=$(basename "$dir")
-  docker compose -f "$COMPOSE_FILE" push ${dir_name}
+  docker compose -f "$COMPOSE_FILE" push ${dir_name} --include-deps
 done
 
