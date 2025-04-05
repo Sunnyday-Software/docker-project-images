@@ -19,5 +19,4 @@ else
   echo "✅ DOCKERHUB_TOKEN è valorizzata!"
 fi
 
-echo "Docker login with user $DOCKERHUB_TOKEN"
 echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
