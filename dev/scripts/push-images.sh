@@ -6,7 +6,7 @@ COMPOSE_FILE="./docker-compose.yml"
 ROOT_DIR="dev/docker"
 
 
-tree -apug
+tree -apug -I .git -I .idea
 docker compose -f "$COMPOSE_FILE" push
 
 # entra nella cartella root di docker build
