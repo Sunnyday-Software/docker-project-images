@@ -22,6 +22,10 @@ fi
 
 echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
+echo "docker images------------------------"
+docker images
+echo "docker push------------------------"
+
 
 docker compose -f "$COMPOSE_FILE" push
 
