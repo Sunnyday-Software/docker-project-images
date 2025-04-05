@@ -2,7 +2,7 @@
 
 source .env
 
-COMPOSE_FILE="${HOST_PROJECT_PATH}/docker-compose.yml"
+COMPOSE_FILE="./docker-compose.yml"
 ROOT_DIR="dev/docker"
 
 
