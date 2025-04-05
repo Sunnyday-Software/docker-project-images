@@ -1,9 +1,5 @@
 #!make
-include .env
-export $(shell sed 's/=.*//' .env)
 
-# Imposta le variabili d'ambiente all'inizio
-$(shell dos2unix .env > /dev/null 2>&1)
 $(shell find ./dev/scripts -type f -name "*.sh" -exec chmod +x {} + > /dev/null 2>&1)
 $(shell find ./dev/scripts -type f -name "*.sh" -exec dos2unix {} + > /dev/null 2>&1)
 
