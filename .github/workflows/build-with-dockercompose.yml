@@ -40,7 +40,7 @@ jobs:
       - name: Lista dei file della workspace per debug
         run: |
           echo "pwd:$(pwd)"
-          echo "env.DOCKER_CONFIG: {{ env.DOCKER_CONFIG }}"
+          echo "env.DOCKER_CONFIG: ${{ env.DOCKER_CONFIG }}"
           echo "tree:"
           tree -apug -I .git -I .idea
           echo ".env:"
