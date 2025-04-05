@@ -36,5 +36,7 @@ for dir in ${ROOT_DIR}/*/; do
   dir_name=$(basename "$dir")
   VAR_NAME="MD5_$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')"
   TAG="${!VAR_NAME}"
+  echo "Pushing image ${DOCKERHUB_USERNAME}/${dir_name}:${TAG}"
+  docker tag ${DOCKERHUB_USERNAME}/${dir_name}:${TAG} ${DOCKERHUB_USERNAME}/${dir_name}:latest
   docker push ${DOCKERHUB_USERNAME}/${dir_name}:${TAG}
 done
