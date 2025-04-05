@@ -34,9 +34,6 @@ jobs:
       - name: 🚀 Esegui build
         run: ./dpm --env .env
 
-      - name: 🚀 Debug actions env
-        run: ./dev/scripts/debug-env.sh
-
       - name: 🚀 Debug docker-in-docker env
         run: ./dpm --env .env debug-in-vm
 
