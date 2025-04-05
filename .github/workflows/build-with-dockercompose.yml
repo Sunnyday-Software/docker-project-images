@@ -39,9 +39,12 @@ jobs:
 
       - name: Lista dei file della workspace per debug
         run: |
-          pwd
+          echo "pwd:$(pwd)"
+          echo "Contenuto di GITHUB_ENV:"
           cat $GITHUB_ENV
-          tree -apug -I .git -I .idea 
+          echo "tree:"
+          tree -apug -I .git -I .idea
+          echo ".env:"
           cat .env
 
       - name: Rendi eseguibile il binario project
