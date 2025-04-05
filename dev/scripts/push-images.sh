@@ -32,7 +32,7 @@ echo "docker push------------------------"
 
 #docker compose -f "$COMPOSE_FILE" push
 
-for dir in ${ROOT_DIR}/; do
+for dir in ${ROOT_DIR}/*/; do
   dir_name=$(basename "$dir")
   docker push ${DOCKERHUB_USERNAME}/${dir_name}
 done
