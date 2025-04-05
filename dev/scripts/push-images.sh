@@ -34,5 +34,7 @@ echo "docker push------------------------"
 
 for dir in ${ROOT_DIR}/*/; do
   dir_name=$(basename "$dir")
-  docker push ${DOCKERHUB_USERNAME}/${dir_name}
+  VAR_NAME="MD5_$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')"
+  TAG="${!VAR_NAME}"
+  docker push ${DOCKERHUB_USERNAME}/${dir_name}:${TAG}
 done
