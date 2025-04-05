@@ -40,8 +40,8 @@ jobs:
       - name: Lista dei file della workspace per debug
         run: |
           echo "pwd:$(pwd)"
-          echo "Contenuto di GITHUB_ENV:"
-          cat $GITHUB_ENV
+          echo "env.DOCKER_CONFIG:"
+          cat ${{ env.DOCKER_CONFIG }}
           echo "tree:"
           tree -apug -I .git -I .idea
           echo ".env:"
