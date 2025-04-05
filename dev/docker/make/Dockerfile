@@ -23,6 +23,7 @@ RUN apt-get update -y; \
     curl \
     gnupg \
     screen \
+    tree \
     make \
     ; \
     rm -rf /var/lib/apt/lists/*
