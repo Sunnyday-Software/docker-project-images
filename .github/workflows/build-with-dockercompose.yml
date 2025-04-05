@@ -37,6 +37,12 @@ jobs:
       - name: Rendi eseguibile gli script shell
         run: chmod +x ./dev/scripts/*.sh
 
+      - name: Lista dei file della workspace per debug
+        run: |
+          pwd
+          tree -apug -I .git -I .idea 
+          cat .env
+
       - name: Rendi eseguibile il binario project
         run: chmod +x ./dpm
 
@@ -45,12 +51,6 @@ jobs:
 
       - name: 🚀 Esegui build
         run: ./dpm --env .env
-
-      - name: Lista dei file della workspace per debug
-        run: |
-          pwd
-          tree -apug -I .git -I .idea 
-          cat .env
 
       - name: 🚀 Debug actions env
         run: ./dev/scripts/debug-env.sh
