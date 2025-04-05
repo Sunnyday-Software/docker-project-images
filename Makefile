@@ -22,6 +22,9 @@ always: build-images
 debug-in-vm:
 	./dev/scripts/debug-env.sh
 
+docker-login:
+	./dev/scripts/docker-login.sh
+
 push-images:
 	./dev/scripts/push-images.sh
 
