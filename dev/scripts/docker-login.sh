@@ -4,6 +4,7 @@ source .env
 
 COMPOSE_FILE="./docker-compose.yml"
 ROOT_DIR="dev/docker"
+export DOCKER_CONFIG=/workdir/.docker
 
 if [ -z "$DOCKERHUB_USERNAME" ]; then
   echo "❌ Errore: DOCKERHUB_USERNAME non è valorizzata o è vuota!"
