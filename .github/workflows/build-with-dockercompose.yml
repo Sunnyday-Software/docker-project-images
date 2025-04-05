@@ -22,17 +22,6 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
-      - name: Stampa github.workspace
-        run: |
-          echo "github.workspace è valorizzato a: ${{ github.workspace }}"
-
-      - name: Imposta DOCKER_CONFIG nel workspace
-        run: |
-          mkdir -p ${{ github.workspace }}/.docker
-          cp ~/.docker/config.json ${{ github.workspace }}/.docker/config.json
-          echo "DOCKER_CONFIG=./.docker" >> $GITHUB_ENV
-          cat ${{ github.workspace }}/.docker/config.json
-
       - name: Rendi eseguibile gli script shell
         run: chmod +x ./dev/scripts/*.sh
 
