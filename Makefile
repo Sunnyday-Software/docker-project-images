@@ -10,7 +10,7 @@ $(shell find ./dev/scripts -type f -name "*.sh" -exec dos2unix {} + > /dev/null 
 # Target predefinito
 .DEFAULT_GOAL := help
 
-DOCKER_RUN := docker compose  run --rm --remove-orphans --env-from-file .env.docker
+DOCKER_RUN := docker compose  run --rm --remove-orphans --env-from-file .env
 
 .PHONY: always build-images
 
@@ -19,6 +19,8 @@ build-images: # costruisce le immagini docker
 
 always: build-images
 
+debug-in-vm:
+	$(DOCKER_RUN) bash ./dev/scripts/debug-env.sh
 
 help: always
 	@echo "\n Available tasks:\n"

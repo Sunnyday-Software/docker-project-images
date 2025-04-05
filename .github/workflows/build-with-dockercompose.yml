@@ -56,8 +56,11 @@ jobs:
           ls -lah
           cat .env
 
-      - name: 🚀 Debug env
+      - name: 🚀 Debug actions env
         run: ./dev/scripts/debug-env.sh
+
+      - name: 🚀 Debug docker-in-docker env
+        run: ./dpm --env .env debug-in-vm
 
       - name: 🚀 Esegui push
         run: ./dev/scripts/push-images.sh
