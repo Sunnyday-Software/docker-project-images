@@ -6,6 +6,13 @@ $(shell find ./dev/scripts -type f -name "*.sh" -exec dos2unix {} + > /dev/null 
 # Target predefinito
 .DEFAULT_GOAL := help
 
+ifeq ($(CI), true)
+	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env.docker
+else
+	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env
+endif
+
+
 DOCKER_RUN := docker compose  run --rm --remove-orphans --env-from-file .env
 
 .PHONY: always build-images
