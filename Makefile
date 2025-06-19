@@ -12,13 +12,10 @@ else
 	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env
 endif
 
-
-DOCKER_RUN := docker compose  run --rm --remove-orphans --env-from-file .env
-
 .PHONY: always build-images
 
 build-images: # costruisce le immagini docker
-	@[ -f dev/scripts/docker_image_verification.sh ] && ./dev/scripts/docker_image_verification.sh
+	@[ -f dev/scripts/gen-md5-and-build.sh ] && (export $$(cat .env | xargs) && ./dev/scripts/gen-md5-and-build.sh)
 
 always: build-images
 
@@ -37,5 +34,3 @@ help: always
 		grep -hE '^[a-zA-Z0-9_-]+:.*## .*$$' $(MAKEFILE_LIST); \
 	} | sort | awk 'BEGIN {FS = ":.*## "}; {printf "  %-25s %s\n", $$1, $$2}'
 	@echo ""
-
-

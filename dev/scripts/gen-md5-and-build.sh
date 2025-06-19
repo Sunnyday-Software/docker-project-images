@@ -23,7 +23,9 @@ done
 cd - >/dev/null || exit 1
 
 # build delle immagini utilizzando docker compose:
-echo "🐳 Docker Compose: BUILD"
+echo "🐳 Docker Compose: BUILD bash first"
+docker compose -f "$COMPOSE_FILE" build bash
+echo "🐳 Docker Compose: BUILD remaining images"
 docker compose -f "$COMPOSE_FILE" build
 
 # opzionalmente, se vuoi anche pushare automaticamente dopo la build:

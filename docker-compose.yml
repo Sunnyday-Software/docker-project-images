@@ -9,6 +9,9 @@ services:
       tags:
         - latest
         - ${MD5_MAKE}
+      args:
+        DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
+        MD5_MAKE: ${MD5_MAKE}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
 
@@ -20,6 +23,9 @@ services:
       tags:
         - latest
         - ${MD5_BASH}
+      args:
+        DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
+        MD5_BASH: ${MD5_BASH}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
 
@@ -34,6 +40,7 @@ services:
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         MD5_BASH: ${MD5_BASH}
+        MD5_NODE_SEMANTIC_RELEASE: ${MD5_NODE_SEMANTIC_RELEASE}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
 
@@ -49,3 +56,4 @@ services:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         MD5_BASH: ${MD5_BASH}
         OPENTOFU_RELEASE: ${OPENTOFU_RELEASE}
+        MD5_OPENTOFU: ${MD5_OPENTOFU}
