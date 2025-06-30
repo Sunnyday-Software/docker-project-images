@@ -44,12 +44,13 @@ echo "docker push------------------------"
 
 for dir in ${ROOT_DIR}/*/; do 
   dir_name=$(basename "$dir")
-  VAR_NAME="MD5_$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')"
+  IMG_NAME=$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')
+  VAR_NAME="${IMG_NAME}_CHECKSUM"
   TAG="${!VAR_NAME}"
-  version_file="dev/docker_versions/${dir_name}.txt"
+  version_file="dev/versions.properties"
   v_full_version=""
   if [ -f "${version_file}" ]; then
-    v_full_version=$(awk -F= '/^v_full_version=/ {print $2}' "${version_file}")
+    v_full_version=$(awk -F= '/^${IMG_NAME}_VERSION=/ {print $2}' "${version_file}")
   fi
 
   echo "Pushing image ${DOCKERHUB_USERNAME}/${dir_name}:${v_full_version}"
