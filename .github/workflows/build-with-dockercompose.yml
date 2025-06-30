@@ -15,5 +15,7 @@ jobs:
       - name: Build images
         env: #vanno passate alla prima chiamata altrimenti viene cancellata dall'ambiente
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: ./build-project.sh
+        run: |
+          chmod +x ./build-project.sh
+          ./build-project.sh
 
