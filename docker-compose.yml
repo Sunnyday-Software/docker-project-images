@@ -2,58 +2,64 @@
 services:
 
   make:
-    image: ${DOCKERHUB_USERNAME}/make:${MD5_MAKE}
+    image: ${DOCKERHUB_USERNAME}/make:${MAKE_CHECKSUM}
     build:
       context: ./dev/docker/make
       dockerfile: Dockerfile
       tags:
         - latest
-        - ${MD5_MAKE}
+        - ${MAKE_CHECKSUM}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
-        MD5_MAKE: ${MD5_MAKE}
+        MAKE_CHECKSUM: ${MAKE_CHECKSUM}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
+      - ${DOCKER_HOST_MAP}
 
   bash:
-    image: ${DOCKERHUB_USERNAME}/bash:${MD5_BASH}
+    image: ${DOCKERHUB_USERNAME}/bash:${BASH_CHECKSUM}
     build:
       context: dev/docker/bash
       dockerfile: Dockerfile
       tags:
         - latest
-        - ${MD5_BASH}
+        - ${BASH_CHECKSUM}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
-        MD5_BASH: ${MD5_BASH}
+        BASH_CHECKSUM: ${BASH_CHECKSUM}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
+      - ${DOCKER_HOST_MAP}
 
   node_semantic_release:
-    image: ${DOCKERHUB_USERNAME}/node-semantic-release:${MD5_NODE_SEMANTIC_RELEASE}
+    image: ${DOCKERHUB_USERNAME}/node-semantic-release:${NODE_SEMANTIC_RELEASE_CHECKSUM}
     build:
       context: ./dev/docker/node_semantic_release
       dockerfile: Dockerfile
       tags:
         - latest
-        - ${MD5_NODE_SEMANTIC_RELEASE}
+        - ${NODE_SEMANTIC_RELEASE_CHECKSUM}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
-        MD5_BASH: ${MD5_BASH}
-        MD5_NODE_SEMANTIC_RELEASE: ${MD5_NODE_SEMANTIC_RELEASE}
+        BASH_CHECKSUM: ${BASH_CHECKSUM}
+        NODE_SEMANTIC_RELEASE_CHECKSUM: ${NODE_SEMANTIC_RELEASE_CHECKSUM}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
+      - ${DOCKER_HOST_MAP}
 
   opentofu:
-    image: ${DOCKERHUB_USERNAME}/opentofu:${MD5_OPENTOFU}
+    image: ${DOCKERHUB_USERNAME}/opentofu:${OPENTOFU_CHECKSUM}
     build:
       context: ./dev/docker/opentofu
       dockerfile: Dockerfile
       tags:
         - latest
-        - ${MD5_OPENTOFU}
+        - ${OPENTOFU_CHECKSUM}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
-        MD5_BASH: ${MD5_BASH}
+        BASH_CHECKSUM: ${BASH_CHECKSUM}
         OPENTOFU_RELEASE: ${OPENTOFU_RELEASE}
-        MD5_OPENTOFU: ${MD5_OPENTOFU}
+        OPENTOFU_CHECKSUM: ${OPENTOFU_CHECKSUM}
+    volumes:
+      - ${HOST_PROJECT_PATH}:/workdir
+      - ${DOCKER_HOST_MAP}

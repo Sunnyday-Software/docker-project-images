@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Source the error handler
+source "$(dirname "$0")/error_handler.sh"
+
 BASE_PATH="./dev/docker"
 BUILD_NECESSARIA=0  # flag per indicare se dobbiamo triggerare una build finale
 

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Source the error handler
+source "$(dirname "$0")/error_handler.sh"
+
 source .env
 
 COMPOSE_FILE="./docker-compose.yml"
@@ -13,14 +16,21 @@ else
   echo "✅ DOCKERHUB_USERNAME è valorizzata!"
 fi
 
-if [ -z "$DOCKERHUB_TOKEN" ]; then
-  echo "❌ Errore: DOCKERHUB_TOKEN non è valorizzata o è vuota!"
-  exit 1
-else
-  echo "✅ DOCKERHUB_TOKEN è valorizzata!"
-fi
+# Only check for DOCKERHUB_TOKEN and perform login in CI environment
+if [ "$CI" = "true" ]; then
+  echo "🔍 CI environment detected, performing Docker login"
 
-echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  if [ -z "$DOCKERHUB_TOKEN" ]; then
+    echo "❌ Errore: DOCKERHUB_TOKEN non è valorizzata o è vuota!"
+    exit 1
+  else
+    echo "✅ DOCKERHUB_TOKEN è valorizzata!"
+  fi
+
+  echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+else
+  echo "🔍 Non-CI environment detected, skipping Docker login"
+fi
 
 echo "docker images------------------------"
 docker images
@@ -32,7 +42,7 @@ echo "docker push------------------------"
 
 #docker compose -f "$COMPOSE_FILE" push
 
-for dir in ${ROOT_DIR}/*/; do
+for dir in ${ROOT_DIR}/*/; do 
   dir_name=$(basename "$dir")
   VAR_NAME="MD5_$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')"
   TAG="${!VAR_NAME}"

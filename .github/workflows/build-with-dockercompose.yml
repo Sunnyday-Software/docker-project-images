@@ -12,24 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Rendi eseguibile gli script shell
-        run: chmod +x ./dev/scripts/*.sh
-
-      - name: Rendi eseguibile il binario project
-        run: chmod +x ./dpm
-
-      - name: 🚀 Debug docker-in-docker env
+      - name: Build images
         env: #vanno passate alla prima chiamata altrimenti viene cancellata dall'ambiente
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: ./dpm --env .env debug-in-vm
+        run: ./build-project.sh
 
-      - name: 🚀 Esegui build
-        run: ./dpm --env .env --skip-env-write
-
-      - name: 🚀 Debug docker-in-docker env
-        run: ./dpm --env .env --skip-env-write debug-in-vm
-
-      - name: 🚀 Esegui push
-        env:
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: ./dpm --env .env --skip-env-write push-images

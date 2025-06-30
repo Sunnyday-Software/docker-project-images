@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Source the error handler
+source "$(dirname "$0")/error_handler.sh"
+
 COMPOSE_FILE="docker-compose.yml"
 ROOT_DIR="dev/docker"
 
@@ -13,7 +16,7 @@ for dir in */; do
   # hash MD5 ridotto a 10 caratteri, checksum stabile anche per nome-filename ordinamento
   DIR_HASH=$(find "$dir" -type f -exec md5sum {} \; | sort | md5sum | awk '{print substr($1,1,10)}')
 
-  VAR_NAME="MD5_$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')"
+  VAR_NAME="$(echo "$dir_name" | tr '[:lower:]-' '[:upper:]_')_CHECKSUM"
   export "${VAR_NAME}"="${DIR_HASH}"
 
   echo "✅ Variabile ambientale esportata: ${VAR_NAME}=${DIR_HASH}"
@@ -29,5 +32,5 @@ echo "🐳 Docker Compose: BUILD remaining images"
 docker compose -f "$COMPOSE_FILE" build
 
 # opzionalmente, se vuoi anche pushare automaticamente dopo la build:
-echo "🐳 Docker Compose: PUSH"
-docker compose -f "$COMPOSE_FILE" push
+#echo "🐳 Docker Compose: PUSH"
+#docker compose -f "$COMPOSE_FILE" push

@@ -1,5 +1,0 @@
-md5=4659bb3a
-v_full_version=0.0.1
-v_major=0
-v_minor=0
-v_patch=1

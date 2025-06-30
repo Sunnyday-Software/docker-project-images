@@ -7,26 +7,26 @@ $(shell find ./dev/scripts -type f -name "*.sh" -exec dos2unix {} + > /dev/null 
 .DEFAULT_GOAL := help
 
 ifeq ($(CI), true)
-	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env.docker
+	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env.ci
 else
 	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env
 endif
 
 .PHONY: always build-images
 
-build-images: # costruisce le immagini docker
-	@[ -f dev/scripts/gen-md5-and-build.sh ] && (export $$(cat .env | xargs) && ./dev/scripts/gen-md5-and-build.sh)
+build-images: ## costruisce le immagini docker
+	@[ -f dev/scripts/gen-md5-and-build.sh ] && ./dev/scripts/gen-md5-and-build.sh
 
 always: build-images
 
 debug-in-vm:
 	./dev/scripts/debug-env.sh
 
-docker-login:
-	./dev/scripts/docker-login.sh
+docker-login: ## docker login
+	$(DOCKER_RUN) make ./dev/scripts/docker-login.sh
 
-push-images:
-	./dev/scripts/push-images.sh
+push-images: ## push delle immagini
+	$(DOCKER_RUN) make ./dev/scripts/push-images.sh
 
 help: always
 	@echo "\n Available tasks:\n"
