@@ -31,10 +31,10 @@ services:
       - ${HOST_PROJECT_PATH}:/workdir
       - ${DOCKER_HOST_MAP}
 
-  node_semantic_release:
+  node-semantic-release:
     image: ${DOCKERHUB_USERNAME}/node-semantic-release:${NODE_SEMANTIC_RELEASE_CHECKSUM}
     build:
-      context: ./dev/docker/node_semantic_release
+      context: dev/docker/node-semantic-release
       dockerfile: Dockerfile
       tags:
         - latest
