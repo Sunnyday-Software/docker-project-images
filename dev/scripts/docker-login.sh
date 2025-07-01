@@ -17,8 +17,6 @@ else
 fi
 
 # Only check for DOCKERHUB_TOKEN and perform login in CI environment
-if [ "$CI" = "true" ]; then
-  echo "🔍 CI environment detected, performing Docker login"
 
   if [ -z "$DOCKERHUB_TOKEN" ]; then
     echo "❌ Errore: DOCKERHUB_TOKEN non è valorizzata o è vuota!"
@@ -28,6 +26,4 @@ if [ "$CI" = "true" ]; then
   fi
 
   echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-else
-  echo "🔍 Non-CI environment detected, skipping Docker login"
-fi
+

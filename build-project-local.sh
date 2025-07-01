@@ -37,15 +37,14 @@ esac
 cat <<EOF | $DPM_EXEC
 (basedir-root)
 (set-var "HOST_PROJECT_PATH" "\${CTX:basedir}")
-(set-var "DOCKER_PLATFORM" "\${DOCKER_PLATFORM}")
+(set-var "DOCKER_PLATFORM" "${DOCKER_PLATFORM}")
 (read-env ".env.no-ci")
 (read-env ".env.project")
+(read-env ".env.local")
 (version-check "dev/docker")
 (read-env "dev/docker/versions.properties")
 (write-env ".env")
 (debug)
 (debug true)
 (docker build-images)
-(docker debug-in-vm)
-(docker push-images)
 EOF
