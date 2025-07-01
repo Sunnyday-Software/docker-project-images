@@ -37,7 +37,7 @@ This document provides guidelines for developing and maintaining the Docker Proj
 2. **Using Docker Compose Directly**:
    ```bash
    # Generate MD5 hashes and build all images
-   ./dev/scripts/gen-md5-and-build.sh
+   ./dev/scripts/zzz_gen-md5-and-build.sh
    
    # Or build specific images
    docker compose build bash

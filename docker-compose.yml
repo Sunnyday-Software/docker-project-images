@@ -6,6 +6,8 @@ services:
     build:
       context: ./dev/docker/make
       dockerfile: Dockerfile
+      platforms:
+        - ${DOCKER_PLATFORM:-linux/amd64}
       tags:
         - latest
         - ${MAKE_CHECKSUM}
@@ -21,6 +23,8 @@ services:
     build:
       context: dev/docker/bash
       dockerfile: Dockerfile
+      platforms:
+        - ${DOCKER_PLATFORM:-linux/amd64}
       tags:
         - latest
         - ${BASH_CHECKSUM}
@@ -36,6 +40,8 @@ services:
     build:
       context: dev/docker/node-semantic-release
       dockerfile: Dockerfile
+      platforms:
+        - ${DOCKER_PLATFORM:-linux/amd64}
       tags:
         - latest
         - ${NODE_SEMANTIC_RELEASE_CHECKSUM}
@@ -52,6 +58,8 @@ services:
     build:
       context: ./dev/docker/opentofu
       dockerfile: Dockerfile
+      platforms:
+        - ${DOCKER_PLATFORM:-linux/amd64}
       tags:
         - latest
         - ${OPENTOFU_CHECKSUM}

@@ -6,16 +6,12 @@ $(shell find ./dev/scripts -type f -name "*.sh" -exec dos2unix {} + > /dev/null 
 # Target predefinito
 .DEFAULT_GOAL := help
 
-ifeq ($(CI), true)
-	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env.ci
-else
-	DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env
-endif
+DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env
 
 .PHONY: always build-images
 
 build-images: ## costruisce le immagini docker
-	@[ -f dev/scripts/gen-md5-and-build.sh ] && ./dev/scripts/gen-md5-and-build.sh
+	@[ -f dev/scripts/docker_image_verification.sh ] && ./dev/scripts/docker_image_verification.sh
 
 always: build-images
 

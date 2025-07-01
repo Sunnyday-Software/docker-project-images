@@ -1,4 +1,4 @@
-name: Docker Compose MD5 Build
+name: Docker Compose Build
 
 on:
   push:
@@ -8,25 +8,23 @@ on:
 jobs:
   build-images-x64:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Build images
         env: #vanno passate alla prima chiamata altrimenti viene cancellata dall'ambiente
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKER_PLATFORM: linux/amd64
         run: |
           chmod +x ./build-project-ci.sh
           ./build-project-ci.sh
   build-images-arm64:
-    runs-on: macos-latest
-
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-
       - name: Build images
         env: #vanno passate alla prima chiamata altrimenti viene cancellata dall'ambiente
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKER_PLATFORM: linux/arm64
         run: |
           chmod +x ./build-project-ci.sh
           ./build-project-ci.sh

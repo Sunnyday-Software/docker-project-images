@@ -4,13 +4,20 @@ chmod +x ./dpm/*
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
+DOCKER_PLATFORM="linux/amd64"
 
 # Map architecture names
 case "$ARCH" in
     x86_64) ARCH="x86_64" ;;
     amd64)  ARCH="x86_64" ;;
-    arm64)  ARCH="arm64" ;;
-    aarch64) ARCH="arm64" ;;
+    arm64)
+      ARCH="arm64"
+      DOCKER_PLATFORM="linux/arm64"
+      ;;
+    aarch64)
+      ARCH="arm64"
+      DOCKER_PLATFORM="linux/arm64"
+      ;;
     *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
 esac
 
@@ -30,6 +37,7 @@ esac
 cat <<EOF | $DPM_EXEC
 (basedir-root)
 (set-var "HOST_PROJECT_PATH" "\${CTX:basedir}")
+(set-var "DOCKER_PLATFORM" "\${DOCKER_PLATFORM}")
 (read-env ".env.no-ci")
 (read-env ".env.project")
 (version-check "dev/docker")
