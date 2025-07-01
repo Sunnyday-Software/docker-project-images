@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  docker-compose-md5-build:
+  build-images-x64:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,4 +18,15 @@ jobs:
         run: |
           chmod +x ./build-project-ci.sh
           ./build-project-ci.sh
+  build-images-arm64:
+    runs-on: macos-latest
 
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        env: #vanno passate alla prima chiamata altrimenti viene cancellata dall'ambiente
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          chmod +x ./build-project-ci.sh
+          ./build-project-ci.sh
