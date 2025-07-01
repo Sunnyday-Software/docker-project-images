@@ -4,9 +4,8 @@ chmod +x ./dpm/*
 cat <<EOF | ./dpm/dpm-linux-x86_64-musl
 (basedir-root)
 (set-var "HOST_PROJECT_PATH" "\${CTX:basedir}")
-(set-var "CI" "true")
+(read-env ".env.ci")
 (read-env ".env.project")
-(read-env ".env.local")
 (version-check "dev/docker")
 (read-env "dev/docker/versions.properties")
 (write-env ".env")

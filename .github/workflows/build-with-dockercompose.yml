@@ -16,6 +16,6 @@ jobs:
         env: #vanno passate alla prima chiamata altrimenti viene cancellata dall'ambiente
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          chmod +x ./build-project.sh
-          ./build-project.sh
+          chmod +x ./build-project-ci.sh
+          ./build-project-ci.sh
 
