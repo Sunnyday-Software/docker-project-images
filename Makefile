@@ -23,10 +23,10 @@ debug-in-vm:
 	./dev/scripts/debug-env.sh
 
 docker-login: ## docker login
-	$(DOCKER_RUN) make ./dev/scripts/docker-login.sh
+	./dev/scripts/docker-login.sh
 
 push-images: ## push delle immagini
-	$(DOCKER_RUN) make ./dev/scripts/push-images.sh
+	./dev/scripts/push-images.sh
 
 help: always
 	@echo "\n Available tasks:\n"
