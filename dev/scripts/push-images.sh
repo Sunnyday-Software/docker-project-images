@@ -26,6 +26,9 @@ if [ ! -d "$BASE_PATH" ]; then
   exit 1
 fi
 
+# Elenco immagini docker corrente (in JSON)
+docker_images_json=$(docker images --format '{{json .}}' | jq -s '.')
+
 # Ciclo sulle sotto-cartelle per verificare coerenza immagini docker
 for folder in "$BASE_PATH"/*/; do
   folder=${folder%/}  # rimuove eventuale slash finale
