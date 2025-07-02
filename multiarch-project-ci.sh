@@ -4,8 +4,12 @@ chmod +x ./dpm/*
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
-DOCKER_PLATFORM="linux/amd64"
-PLATFORM_TAG="amd64"
+
+# Set default platform if not defined
+if [ -z "${DOCKER_PLATFORM}" ]; then
+    DOCKER_PLATFORM="linux/amd64"
+    PLATFORM_TAG="amd64"
+fi
 
 # Map architecture names
 case "$ARCH" in
@@ -27,7 +31,12 @@ esac
 # Select appropriate DPM executable
 case "$OS" in
     linux)
-        DPM_EXEC="./dpm/dpm-linux-${ARCH}-musl"
+        if [ "$ARCH" = "arm64" ]; then
+            DPM_EXEC="./dpm/dpm-linux-arm64"
+        else
+            DPM_EXEC="./dpm/dpm-linux-${ARCH}-musl"
+        fi
+
         ;;
     darwin)
         DPM_EXEC="./dpm/dpm-macos-${ARCH}"
@@ -40,8 +49,12 @@ esac
 cat <<EOF | $DPM_EXEC
 (basedir-root)
 (set-var "HOST_PROJECT_PATH" "\${CTX:basedir}")
-(set-var "DOCKER_PLATFORM" "${DOCKER_PLATFORM}")
-(read-env ".env")
+(read-env ".env.ci")
+(read-env ".env.project")
+(version-check "dev/docker")
+(read-env "dev/docker/versions.properties")
+(write-env ".env")
 (debug)
 (docker push-multiarch)
 EOF
+
