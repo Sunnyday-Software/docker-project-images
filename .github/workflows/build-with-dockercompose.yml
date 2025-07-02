@@ -52,6 +52,7 @@ jobs:
 
           # Esegui la build ARM64 in container (se vuoi passare script, monta volume, ecc.)
           docker run --rm --platform linux/arm64 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             sunnydaysoftware/make:9391b157-arm64 \
