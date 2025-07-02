@@ -27,7 +27,12 @@ esac
 # Select appropriate DPM executable
 case "$OS" in
     linux)
-        DPM_EXEC="./dpm/dpm-linux-${ARCH}-musl"
+        if [ "$ARCH" = "arm64" ]; then
+            DPM_EXEC="./dpm/dpm-linux-arm64"
+        else
+            DPM_EXEC="./dpm/dpm-linux-${ARCH}-musl"
+        fi
+
         ;;
     darwin)
         DPM_EXEC="./dpm/dpm-macos-${ARCH}"
