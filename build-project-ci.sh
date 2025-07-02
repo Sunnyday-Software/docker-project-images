@@ -4,8 +4,12 @@ chmod +x ./dpm/*
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
-DOCKER_PLATFORM="linux/amd64"
-PLATFORM_TAG="amd64"
+
+# Set default platform if not defined
+if [ -z "${DOCKER_PLATFORM}" ]; then
+    DOCKER_PLATFORM="linux/amd64"
+    PLATFORM_TAG="amd64"
+fi
 
 # Map architecture names
 case "$ARCH" in
