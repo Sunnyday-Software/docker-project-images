@@ -24,6 +24,9 @@ docker-login: ## docker login
 push-images: ## push delle immagini
 	./dev/scripts/push-images.sh
 
+push-multiarch: ## push multi-arch manifests
+	./dev/scripts/push-multiarch.sh
+
 help: always
 	@echo "\n Available tasks:\n"
 	@{ \

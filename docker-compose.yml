@@ -2,15 +2,14 @@
 services:
 
   make:
-    image: ${DOCKERHUB_USERNAME}/make:${MAKE_CHECKSUM}
+    image: ${DOCKERHUB_USERNAME}/make:${MAKE_CHECKSUM}-${PLATFORM_TAG}
     build:
       context: ./dev/docker/make
       dockerfile: Dockerfile
       platforms:
         - ${DOCKER_PLATFORM}
       tags:
-        - latest
-        - ${MAKE_CHECKSUM}
+        - ${DOCKERHUB_USERNAME}/make:latest-${PLATFORM_TAG}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         MAKE_CHECKSUM: ${MAKE_CHECKSUM}
@@ -19,15 +18,14 @@ services:
       - ${DOCKER_HOST_MAP}
 
   bash:
-    image: ${DOCKERHUB_USERNAME}/bash:${BASH_CHECKSUM}
+    image: ${DOCKERHUB_USERNAME}/bash:${BASH_CHECKSUM}-${PLATFORM_TAG}
     build:
       context: dev/docker/bash
       dockerfile: Dockerfile
       platforms:
         - ${DOCKER_PLATFORM}
       tags:
-        - latest
-        - ${BASH_CHECKSUM}
+        - ${DOCKERHUB_USERNAME}/bash:latest-${PLATFORM_TAG}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         BASH_CHECKSUM: ${BASH_CHECKSUM}
@@ -36,36 +34,36 @@ services:
       - ${DOCKER_HOST_MAP}
 
   node-semantic-release:
-    image: ${DOCKERHUB_USERNAME}/node-semantic-release:${NODE_SEMANTIC_RELEASE_CHECKSUM}
+    image: ${DOCKERHUB_USERNAME}/node-semantic-release:${NODE_SEMANTIC_RELEASE_CHECKSUM}-${PLATFORM_TAG}
     build:
       context: dev/docker/node-semantic-release
       dockerfile: Dockerfile
       platforms:
         - ${DOCKER_PLATFORM}
       tags:
-        - latest
-        - ${NODE_SEMANTIC_RELEASE_CHECKSUM}
+        - ${DOCKERHUB_USERNAME}/node-semantic-release:latest-${PLATFORM_TAG}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         BASH_CHECKSUM: ${BASH_CHECKSUM}
+        PLATFORM_TAG: ${PLATFORM_TAG}
         NODE_SEMANTIC_RELEASE_CHECKSUM: ${NODE_SEMANTIC_RELEASE_CHECKSUM}
     volumes:
       - ${HOST_PROJECT_PATH}:/workdir
       - ${DOCKER_HOST_MAP}
 
   opentofu:
-    image: ${DOCKERHUB_USERNAME}/opentofu:${OPENTOFU_CHECKSUM}
+    image: ${DOCKERHUB_USERNAME}/opentofu:${OPENTOFU_CHECKSUM}-${PLATFORM_TAG}
     build:
       context: ./dev/docker/opentofu
       dockerfile: Dockerfile
       platforms:
         - ${DOCKER_PLATFORM}
       tags:
-        - latest
-        - ${OPENTOFU_CHECKSUM}
+        - ${DOCKERHUB_USERNAME}/opentofu:latest-${PLATFORM_TAG}
       args:
         DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
         BASH_CHECKSUM: ${BASH_CHECKSUM}
+        PLATFORM_TAG: ${PLATFORM_TAG}
         OPENTOFU_RELEASE: ${OPENTOFU_RELEASE}
         OPENTOFU_CHECKSUM: ${OPENTOFU_CHECKSUM}
     volumes:

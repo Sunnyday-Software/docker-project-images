@@ -50,17 +50,16 @@ for folder in "$BASE_PATH"/*/; do
     continue
   fi
 
+docker manifest create "${full_image_name}:${expected_checksum}" \
+  "${full_image_name}:${expected_checksum}-amd64" \
+  "${full_image_name}:${expected_checksum}-arm64"
 
-  match=$(echo "$docker_images_json" | jq --arg repo "$full_image_name" --arg tag "${expected_checksum}-${PLATFORM_TAG}" 'map(select(.Repository == $repo and .Tag == $tag)) | length')
+docker manifest create "${full_image_name}:latest" \
+  "${full_image_name}:${expected_checksum}-amd64" \
+  "${full_image_name}:${expected_checksum}-arm64"
 
-  if [ "$match" -eq 0 ]; then
-    echo "❌ [$image_full]: immagine mancante o tag differente!"
-    echo "  checksum_var:${checksum_var}"
-    echo "  checksum:${expected_checksum}"
+docker manifest push "${full_image_name}:${expected_checksum}"
+docker manifest push "${full_image_name}:latest"
 
-    exit 1
-  fi
-
-docker push ${image_full}
 done
 

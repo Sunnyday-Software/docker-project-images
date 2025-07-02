@@ -16,6 +16,7 @@ jobs:
         env:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKER_PLATFORM: linux/amd64
+          PLATFORM_TAG: amd64
           FORCE_PLATFORM: "true"  # Forza l'uso della piattaforma specificata
         run: |
           echo "Building for platform: $DOCKER_PLATFORM"
@@ -32,6 +33,7 @@ jobs:
         env:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKER_PLATFORM: linux/arm64
+          PLATFORM_TAG: arm64
           FORCE_PLATFORM: "true"  # Forza l'uso della piattaforma specificata
         run: |
           echo "Building for platform: $DOCKER_PLATFORM"
@@ -56,13 +58,6 @@ jobs:
         run: |
           # Crea manifest multi-architettura per ogni immagine
           # Adatta questi comandi ai tuoi checksum specifici
-          
-          # Esempio per l'immagine make
-          docker manifest create \
-            ${DOCKERHUB_USERNAME}/make:latest \
-            ${DOCKERHUB_USERNAME}/make:latest-linux-amd64 \
-            ${DOCKERHUB_USERNAME}/make:latest-linux-arm64
-          
-          docker manifest push ${DOCKERHUB_USERNAME}/make:latest
-          
-          # Ripeti per le altre immagini...
+          echo "Building manifests"
+          chmod +x ./multiarch-project-ci.sh
+          ./multiarch-project-ci.sh

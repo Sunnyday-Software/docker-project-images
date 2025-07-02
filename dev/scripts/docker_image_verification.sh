@@ -21,19 +21,28 @@ for folder in "$BASE_PATH"/*/; do
   folder=${folder%/}  # rimuove eventuale slash finale
   image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')
   normalized_name=$(basename "$folder" | tr '[:lower:]' '[:upper:]' | sed 's/[^[:alnum:]]/_/g')
-  full_image_name="${PROJECT_NAME}-${image_name}"
+  full_image_name="${DOCKERHUB_USERNAME}/${image_name}"
 
   checksum_var="${normalized_name}_CHECKSUM"
   expected_checksum=${!checksum_var}
+  image_full="${full_image_name}:${expected_checksum}-${PLATFORM_TAG}"
 
+  echo "folder: $folder"
+  echo "image_name: $image_name"
+  echo "normalized_name: $normalized_name"
+  echo "full_image_name: $full_image_name"
+  echo "checksum_var: $checksum_var"
+  echo "expected_checksum: $expected_checksum"
+  echo "image_full: $image_full"
+  
   if [ -z "${expected_checksum}" ]; then
     echo "⚠️  Ignoro '$image_name', variabile ambientale '$checksum_var' non definita"
     continue
   fi
 
-  image_full="${full_image_name}:${expected_checksum}"
 
-  match=$(echo "$docker_images_json" | jq --arg repo "$full_image_name" --arg tag "${expected_checksum}" 'map(select(.Repository == $repo and .Tag == $tag)) | length')
+
+  match=$(echo "$docker_images_json" | jq --arg repo "$full_image_name" --arg tag "${expected_checksum}-${PLATFORM_TAG}" 'map(select(.Repository == $repo and .Tag == $tag)) | length')
 
   if [ "$match" -eq 0 ]; then
     echo "❌ [$image_full]: immagine mancante o tag differente!"
