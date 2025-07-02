@@ -34,6 +34,8 @@ jobs:
       - name: Prepare
         run: |
           chmod +x ./build-project-ci.sh
+      - name: Esporta tutte le env in un file
+        run: printenv > .env.full
       - name: Build & test ARM64 (via Docker + QEMU)
         env:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -55,6 +57,7 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
+            --env-file .env.full \
             sunnydaysoftware/make:9391b157-arm64 \
             bash -c "./build-project-ci.sh"          
 
