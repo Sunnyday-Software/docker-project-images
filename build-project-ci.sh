@@ -46,6 +46,35 @@ case "$OS" in
         ;;
 esac
 
+
+# Fase 1: Aggiorna versions.properties
+echo "=== Fase 1: Aggiornamento versions.properties ==="
+cat <<EOF | $DPM_EXEC
+(basedir-root)
+(version-check "dev/docker")
+EOF
+
+# Verifica se ci sono stati cambiamenti nel file versions.properties
+if [ -n "$(git status --porcelain dev/docker/versions.properties)" ]; then
+    echo "=== Rilevati cambiamenti in versions.properties ==="
+
+    # Commit e push dei cambiamenti
+    git add dev/docker/versions.properties
+    git commit -m "chore: update Docker image versions [ci skip]"
+
+    # Push solo se non siamo in modalità CI o se esplicitamente richiesto
+    if [ "${CI_PUSH_VERSIONS:-false}" = "true" ]; then
+        git push origin HEAD
+        echo "=== Versions pushate. Fermando l'esecuzione per permettere un nuovo run della CI ==="
+        exit 0
+    else
+        echo "=== Cambiamenti committati localmente. Ricorda di fare push prima della build ==="
+    fi
+fi
+
+
+# Fase 2: Build e Push delle immagini
+echo "=== Fase 2: Build e Push delle immagini ==="
 cat <<EOF | $DPM_EXEC
 (basedir-root)
 (set-var "HOST_PROJECT_PATH" "\${CTX:basedir}")
@@ -53,7 +82,6 @@ cat <<EOF | $DPM_EXEC
 (set-var "PLATFORM_TAG" "${PLATFORM_TAG}")
 (read-env ".env.ci")
 (read-env ".env.project")
-(version-check "dev/docker")
 (read-env "dev/docker/versions.properties")
 (write-env ".env")
 (debug)
