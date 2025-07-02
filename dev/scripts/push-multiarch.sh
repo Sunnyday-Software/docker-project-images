@@ -35,8 +35,13 @@ for folder in "$BASE_PATH"/*/; do
 
   checksum_var="${normalized_name}_CHECKSUM"
   expected_checksum=${!checksum_var}
+
+  version_var="${normalized_name}_VERSION"
+  expected_version="v-${!version_var}"
+
   image_full="${full_image_name}:${expected_checksum}-${PLATFORM_TAG}"
 
+  echo "=================================================="
   echo "folder: $folder"
   echo "image_name: $image_name"
   echo "normalized_name: $normalized_name"
@@ -44,22 +49,30 @@ for folder in "$BASE_PATH"/*/; do
   echo "checksum_var: $checksum_var"
   echo "expected_checksum: $expected_checksum"
   echo "image_full: $image_full"
+  echo ""
 
-  if [ -z "${expected_checksum}" ]; then
-    echo "⚠️  Ignoro '$image_name', variabile ambientale '$checksum_var' non definita"
-    continue
-  fi
+  echo "${full_image_name}:${expected_checksum}"
 
-docker manifest create "${full_image_name}:${expected_checksum}" \
-  "${full_image_name}:${expected_checksum}-amd64" \
-  "${full_image_name}:${expected_checksum}-arm64"
+  docker manifest create "${full_image_name}:${expected_checksum}" \
+    "${full_image_name}:${expected_checksum}-amd64" \
+    "${full_image_name}:${expected_checksum}-arm64"
 
-docker manifest create "${full_image_name}:latest" \
-  "${full_image_name}:${expected_checksum}-amd64" \
-  "${full_image_name}:${expected_checksum}-arm64"
+  docker manifest push "${full_image_name}:${expected_checksum}"
 
-docker manifest push "${full_image_name}:${expected_checksum}"
-docker manifest push "${full_image_name}:latest"
+  echo "${full_image_name}:${expected_version}"
+
+  docker manifest create "${full_image_name}:${expected_version}" \
+    "${full_image_name}:${expected_checksum}-amd64" \
+    "${full_image_name}:${expected_checksum}-arm64"
+
+  docker manifest push "${full_image_name}:${expected_version}"
+
+  echo "${full_image_name}:latest"
+  docker manifest create "${full_image_name}:latest" \
+    "${full_image_name}:${expected_checksum}-amd64" \
+    "${full_image_name}:${expected_checksum}-arm64"
+
+  docker manifest push "${full_image_name}:latest"
 
 done
 
