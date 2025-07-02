@@ -22,23 +22,41 @@ jobs:
           echo "Building for platform: $DOCKER_PLATFORM"
           chmod +x ./build-project-ci.sh
           ./build-project-ci.sh
-          
+
   build-images-arm64:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build images
+        with:
+          ref: main
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Prepare
+        run: |
+          chmod +x ./build-project-ci.sh
+      - name: Build & test ARM64 (via Docker + QEMU)
         env:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKER_PLATFORM: linux/arm64
           PLATFORM_TAG: arm64
           FORCE_PLATFORM: "true"  # Forza l'uso della piattaforma specificata
         run: |
-          echo "Building for platform: $DOCKER_PLATFORM"
-          chmod +x ./build-project-ci.sh
-          ./build-project-ci.sh
+          # Costruisci un'immagine ARM64 che abbia tutto il necessario per buildare e testare
+          # docker buildx build --platform linux/arm64 \
+          #  -t myarmbuild:latest \
+          #  -f Dockerfile.ci.arm64 . \
+          #  --load
+          
+          # Utilizzo questa immagine per accelerare i tempi
+          # sunnydaysoftware/make:9391b157-arm64
+
+          # Esegui la build ARM64 in container (se vuoi passare script, monta volume, ecc.)
+          docker run --rm --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            sunnydaysoftware/make:9391b157-arm64 \
+            bash -c "./build-project-ci.sh"          
+
 
   # Job opzionale per creare manifest multi-architettura
   create-multiarch-manifest:
