@@ -10,7 +10,12 @@ ENV LC_ALL=en_US.UTF-8
 
 RUN apt-get update -y; \
     apt-get install -y --no-install-recommends \
+    build-essential \
     ca-certificates \
+    pkg-config \
+    cmake \
+    git \
+    wget \
     dumb-init \
     gosu \
     tzdata \
