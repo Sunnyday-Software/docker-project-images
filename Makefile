@@ -8,6 +8,12 @@ $(shell find ./dev/scripts -type f -name "*.sh" -exec dos2unix {} + > /dev/null 
 
 DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env
 
+ifdef DOCKER_PLATFORM
+ifeq ($(DOCKER_PLATFORM),linux/arm64)
+DOCKER_RUN := docker compose run --rm --remove-orphans --env-from-file .env --platform linux/arm64
+endif
+endif
+
 .PHONY: always build-images
 
 build-images: ## costruisce le immagini docker

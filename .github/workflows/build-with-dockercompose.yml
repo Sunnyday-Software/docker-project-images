@@ -53,13 +53,14 @@ jobs:
           # sunnydaysoftware/make:9391b157-arm64
 
           # Esegui la build ARM64 in container (se vuoi passare script, monta volume, ecc.)
-          docker run --rm --platform linux/arm64 \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            --env-file .env.full \
-            sunnydaysoftware/make:9391b157-arm64 \
-            bash -c "./build-project-ci.sh"          
+          #docker run --rm --platform linux/arm64 \
+          #  -v /var/run/docker.sock:/var/run/docker.sock \
+          #  -v ${{ github.workspace }}:/workspace \
+          #  -w /workspace \
+          #  --env-file .env.full \
+          #  sunnydaysoftware/make:9391b157-arm64 \
+          #  bash -c "./build-project-ci.sh"          
+          ./build-project-ci.sh          
 
 
   # Job opzionale per creare manifest multi-architettura
