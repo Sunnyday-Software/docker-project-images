@@ -84,8 +84,6 @@ cat <<EOF | $DPM_EXEC
 (read-env ".env.project")
 (read-env "dev/docker/versions.properties")
 (write-env ".env")
-(debug)
-(debug true)
-(docker build-images)
-(docker push-images)
 EOF
+
+./dev/scripts/docker_image_build_and_push_script.sh

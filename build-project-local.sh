@@ -50,5 +50,6 @@ cat <<EOF | $DPM_EXEC
 (write-env ".env")
 (debug)
 (debug true)
-(docker build-images)
 EOF
+
+./dev/scripts/docker_image_build_and_push_script.sh

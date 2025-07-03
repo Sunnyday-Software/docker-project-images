@@ -4,6 +4,7 @@
 source "$(dirname "$0")/error_handler.sh"
 
 source .env
+source "$(dirname "$0")/../../build_config.sh"
 
 COMPOSE_FILE="./docker-compose.yml"
 export DOCKER_CONFIG=/workdir/.docker
@@ -26,6 +27,23 @@ if [ ! -d "$BASE_PATH" ]; then
   exit 1
 fi
 
+# Funzione per verificare se un'immagine è multipiattaforma
+is_multiplatform() {
+  local image_name="$1"
+  local image_ref="IMAGE_$(echo "$image_name" | tr '[:lower:]' '[:upper:]')"
+
+  # Verifica se l'immagine esiste nella configurazione
+  if declare -p "$image_ref" &>/dev/null; then
+    local -n image_data=$image_ref
+    local platforms="${image_data[platforms]}"
+    # È multipiattaforma se contiene sia amd64 che arm64
+    [[ "$platforms" == *"amd64"* && "$platforms" == *"arm64"* ]]
+  else
+    # Default: assume multipiattaforma se non trovata nella configurazione
+    return 0
+  fi
+}
+
 # Ciclo sulle sotto-cartelle per verificare coerenza immagini docker
 for folder in "$BASE_PATH"/*/; do
   folder=${folder%/}  # rimuove eventuale slash finale
@@ -39,8 +57,6 @@ for folder in "$BASE_PATH"/*/; do
   version_var="${normalized_name}_VERSION"
   expected_version="v-${!version_var}"
 
-  image_full="${full_image_name}:${expected_checksum}-${PLATFORM_TAG}"
-
   echo "=================================================="
   echo "folder: $folder"
   echo "image_name: $image_name"
@@ -48,31 +64,49 @@ for folder in "$BASE_PATH"/*/; do
   echo "full_image_name: $full_image_name"
   echo "checksum_var: $checksum_var"
   echo "expected_checksum: $expected_checksum"
-  echo "image_full: $image_full"
   echo ""
 
-  echo "${full_image_name}:${expected_checksum}"
+  # Verifica se l'immagine è multipiattaforma
+  if is_multiplatform "$image_name"; then
+    echo "🏗️  Immagine multipiattaforma: $image_name"
+    echo "📦 Creazione manifesti per amd64 e arm64..."
 
-  docker manifest create "${full_image_name}:${expected_checksum}" \
-    "${full_image_name}:${expected_checksum}-amd64" \
-    "${full_image_name}:${expected_checksum}-arm64"
+    # Crea manifesto per checksum tag
+    echo "📋 ${full_image_name}:${expected_checksum}"
+    docker manifest create "${full_image_name}:${expected_checksum}" \
+      "${full_image_name}:${expected_checksum}-amd64" \
+      "${full_image_name}:${expected_checksum}-arm64"
+    docker manifest push "${full_image_name}:${expected_checksum}"
 
-  docker manifest push "${full_image_name}:${expected_checksum}"
+    # Crea manifesto per version tag
+    echo "📋 ${full_image_name}:${expected_version}"
+    docker manifest create "${full_image_name}:${expected_version}" \
+      "${full_image_name}:${expected_checksum}-amd64" \
+      "${full_image_name}:${expected_checksum}-arm64"
+    docker manifest push "${full_image_name}:${expected_version}"
 
-  echo "${full_image_name}:${expected_version}"
+    # Crea manifesto per latest tag
+    echo "📋 ${full_image_name}:latest"
+    docker manifest create "${full_image_name}:latest" \
+      "${full_image_name}:${expected_checksum}-amd64" \
+      "${full_image_name}:${expected_checksum}-arm64"
+    docker manifest push "${full_image_name}:latest"
 
-  docker manifest create "${full_image_name}:${expected_version}" \
-    "${full_image_name}:${expected_checksum}-amd64" \
-    "${full_image_name}:${expected_checksum}-arm64"
+  else
+    echo "🔧 Immagine single-platform: $image_name"
+    echo "🏷️  Tagging solo con latest (assumendo amd64)..."
 
-  docker manifest push "${full_image_name}:${expected_version}"
+    # Per immagini single-platform, tagga solo l'immagine esistente come latest
+    single_platform_tag="${full_image_name}:${expected_checksum}-amd64"
 
-  echo "${full_image_name}:latest"
-  docker manifest create "${full_image_name}:latest" \
-    "${full_image_name}:${expected_checksum}-amd64" \
-    "${full_image_name}:${expected_checksum}-arm64"
+    echo "🏷️  Tagging ${single_platform_tag} come latest"
+    docker tag "$single_platform_tag" "${full_image_name}:latest"
+    docker push "${full_image_name}:latest"
 
-  docker manifest push "${full_image_name}:latest"
+    # Tagga anche con version
+    echo "🏷️  Tagging ${single_platform_tag} come ${expected_version}"
+    docker tag "$single_platform_tag" "${full_image_name}:${expected_version}"
+    docker push "${full_image_name}:${expected_version}"
+  fi
 
 done
-
