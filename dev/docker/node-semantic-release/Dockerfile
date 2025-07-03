@@ -67,9 +67,6 @@ WORKDIR /workdir
 # Switch to non-root user for better security
 USER bashuser
 
-# Switch back to root for entrypoint
-USER root
-
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Default command
