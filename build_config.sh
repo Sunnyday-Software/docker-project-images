@@ -5,7 +5,8 @@
 # - name: nome dell'immagine
 # - platforms: piattaforme supportate (amd64, arm64, o entrambe)
 # - depends_on: dipendenze da altre immagini (opzionale)
-# - build_args: argomenti di build (opzionale)
+# - build_args: argomenti di build completi chiave=valore (opzionale)
+# - env_to_args: lista di variabili ambientali da trasformare in --build-arg (opzionale)
 
 declare -A IMAGE_BASH=(
     [name]="bash"
@@ -13,6 +14,7 @@ declare -A IMAGE_BASH=(
     [dockerfile]="dev/docker/bash/Dockerfile"
     [context]="dev/docker/bash"
     [build_args]=""
+    [env_to_args]=""
 )
 
 declare -A IMAGE_MAKE=(
@@ -22,6 +24,7 @@ declare -A IMAGE_MAKE=(
     [context]="dev/docker/make"
     [depends_on]="bash"
     [build_args]=""
+    [env_to_args]=""
 )
 
 declare -A IMAGE_OPENTOFU=(
@@ -30,7 +33,8 @@ declare -A IMAGE_OPENTOFU=(
     [dockerfile]="dev/docker/opentofu/Dockerfile"
     [context]="dev/docker/opentofu"
     [depends_on]="bash"
-    [build_args]="OPENTOFU_RELEASE=${OPENTOFU_RELEASE:-1.9.0}"
+    [build_args]="OPENTOFU_RELEASE=${OPENTOFU_RELEASE:-1.10.0}"
+    [env_to_args]="DOCKERHUB_USERNAME PLATFORM_TAG BASH_CHECKSUM"
 )
 
 declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
@@ -40,6 +44,7 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [context]="dev/docker/node-semantic-release"
     [depends_on]="bash"
     [build_args]=""
+    [env_to_args]="DOCKERHUB_USERNAME PLATFORM_TAG BASH_CHECKSUM"
 )
 
 # Ordine di build delle immagini
@@ -62,7 +67,7 @@ supports_platform() {
     local image_ref="$1"
     local platform="$2"
     local -n image_data=$image_ref
-    
+
     [[ "${image_data[platforms]}" == *"$platform"* ]]
 }
 
@@ -70,6 +75,6 @@ supports_platform() {
 get_dependencies() {
     local image_ref="$1"
     local -n image_data=$image_ref
-    
+
     echo "${image_data[depends_on]:-}"
 }

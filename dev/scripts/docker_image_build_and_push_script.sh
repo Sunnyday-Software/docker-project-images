@@ -1,20 +1,5 @@
 #!/bin/bash
 
-# Funzione per caricare un file con source se esiste
-load_file_if_exists() {
-    local file_path="$1"
-
-    if [ -f "$file_path" ]; then
-        local filename=$(basename "$file_path")
-        echo "Loading $filename..."
-        source "$file_path"
-        return 0
-    else
-        echo "File not found: $file_path"
-        return 1
-    fi
-}
-
 load_file_with_export() {
     local env_file="$1"
 
@@ -37,18 +22,11 @@ load_file_with_export() {
 
 
 # Source
-load_file_if_exists "$(dirname "$0")/error_handler.sh"
-load_file_if_exists "$(dirname "$0")/../../build_config.sh"
+source "$(dirname "$0")/error_handler.sh"
 load_file_with_export "$(dirname "$0")/../../.env"
 load_file_with_export "$(dirname "$0")/../docker/versions.properties"
 
-echo "=== Contenuto del file .env ==="
-if [ -f "$(dirname "$0")/../../.env" ]; then
-    cat "$(dirname "$0")/../../.env"
-else
-    echo "File .env non trovato!"
-fi
-echo "==============================="
+source "$(dirname "$0")/../../build_config.sh"
 
 
 set -e
@@ -97,6 +75,7 @@ build_single_image() {
     local dockerfile="${image_data[dockerfile]}"
     local context="${image_data[context]}"
     local build_args="${image_data[build_args]:-}"
+    local env_to_args="${image_data[env_to_args]:-}"
 
     # Calcola il checksum per il versioning
     local normalized_name=$(echo "$image_name" | tr '[:lower:]' '[:upper:]' | sed 's/[^[:alnum:]]/_/g')
@@ -152,6 +131,21 @@ build_single_image() {
         IFS=' ' read -ra ARGS <<< "$build_args"
         for arg in "${ARGS[@]}"; do
             build_cmd+=" --build-arg $arg"
+        done
+    fi
+
+    # Aggiungi env_to_args se presenti
+    if [ -n "$env_to_args" ]; then
+        IFS=' ' read -ra ENV_VARS <<< "$env_to_args"
+        for env_var in "${ENV_VARS[@]}"; do
+            if [ -n "${!env_var:-}" ]; then
+                value="${!env_var}"
+                escaped_value="${value//\"/\\\"}"  # Escape delle virgolette
+                build_cmd+=" --build-arg $env_var=\"$escaped_value\""
+            else
+                echo "❌ Variabile ambientale richiesta non trovata: $env_var"
+                return 1
+            fi
         done
     fi
 
