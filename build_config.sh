@@ -33,11 +33,21 @@ declare -A IMAGE_OPENTOFU=(
     [build_args]="OPENTOFU_RELEASE=${OPENTOFU_RELEASE:-1.9.0}"
 )
 
+declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
+    [name]="node-semantic-release"
+    [platforms]="amd64,arm64"
+    [dockerfile]="dev/docker/node-semantic-release/Dockerfile"
+    [context]="dev/docker/node-semantic-release"
+    [depends_on]="bash"
+    [build_args]=""
+)
+
 # Ordine di build delle immagini
 BUILD_ORDER=(
     "IMAGE_BASH"
     "IMAGE_MAKE"
     "IMAGE_OPENTOFU"
+    "IMAGE_NODE_SEMANTIC_RELEASE"
 )
 
 # Funzione per ottenere le informazioni di un'immagine
