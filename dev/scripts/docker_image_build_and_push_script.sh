@@ -36,7 +36,7 @@ load_file_with_export() {
 }
 
 
-# Source the error handler and configuration
+# Source
 load_file_if_exists "$(dirname "$0")/error_handler.sh"
 load_file_if_exists "$(dirname "$0")/../../build_config.sh"
 load_file_with_export "$(dirname "$0")/../../.env"
