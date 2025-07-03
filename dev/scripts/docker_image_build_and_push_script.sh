@@ -1,12 +1,63 @@
 #!/bin/bash
 
+# Funzione per caricare un file con source se esiste
+load_file_if_exists() {
+    local file_path="$1"
+
+    if [ -f "$file_path" ]; then
+        local filename=$(basename "$file_path")
+        echo "Loading $filename..."
+        source "$file_path"
+        return 0
+    else
+        echo "File not found: $file_path"
+        return 1
+    fi
+}
+
+load_file_with_export() {
+    local env_file="$1"
+
+    if [ -f "$env_file" ]; then
+        local filename=$(basename "$env_file")
+        echo "Loading $filename..."
+
+        # Abilita export automatico
+        set -a
+        source "$env_file"
+        # Disabilita export automatico
+        set +a
+
+        return 0
+    else
+        echo "File not found: $env_file"
+        return 1
+    fi
+}
+
+
 # Source the error handler and configuration
-source "$(dirname "$0")/error_handler.sh"
-source "$(dirname "$0")/../../build_config.sh"
-source "$(dirname "$0")/../../.env"
-source "$(dirname "$0")/../docker/versions.properties"
+load_file_if_exists "$(dirname "$0")/error_handler.sh"
+load_file_if_exists "$(dirname "$0")/../../build_config.sh"
+load_file_with_export "$(dirname "$0")/../../.env"
+load_file_with_export "$(dirname "$0")/../docker/versions.properties"
+
+echo "=== Contenuto del file .env ==="
+if [ -f "$(dirname "$0")/../../.env" ]; then
+    cat "$(dirname "$0")/../../.env"
+else
+    echo "File .env non trovato!"
+fi
+echo "==============================="
+
 
 set -e
+
+echo "Script di build delle immagini"
+echo "$(dirname "$0")"
+echo ""
+env
+echo "------------------------------"
 
 # Default platforms se non specificato
 PLATFORMS="${DOCKER_PLATFORMS:-amd64,arm64}"
