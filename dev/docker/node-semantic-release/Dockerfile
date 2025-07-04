@@ -13,7 +13,9 @@ RUN apt-get update -y && \
     apt-utils \
     ca-certificates \
     curl \
-    gnupg
+    gnupg \
+    build-essential \
+    git
 
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
