@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Configurazione delle immagini Docker
 # Ogni immagine è definita come un array associativo con:
