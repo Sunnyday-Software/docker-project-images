@@ -14,7 +14,7 @@ declare -A IMAGE_BASH=(
     [dockerfile]="dev/docker/bash/Dockerfile"
     [context]="dev/docker/bash"
     [build_args]=""
-    [env_to_args]=""
+    [env_to_args]="DOCKERHUB_USERNAME"
 )
 
 declare -A IMAGE_MAKE=(
@@ -24,7 +24,7 @@ declare -A IMAGE_MAKE=(
     [context]="dev/docker/make"
     [depends_on]="bash"
     [build_args]=""
-    [env_to_args]=""
+    [env_to_args]="DOCKERHUB_USERNAME"
 )
 
 declare -A IMAGE_OPENTOFU=(
@@ -34,7 +34,7 @@ declare -A IMAGE_OPENTOFU=(
     [context]="dev/docker/opentofu"
     [depends_on]="bash"
     [build_args]="OPENTOFU_RELEASE=${OPENTOFU_RELEASE:-1.10.0}"
-    [env_to_args]="DOCKERHUB_USERNAME PLATFORM_TAG BASH_CHECKSUM"
+    [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
 declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
@@ -44,7 +44,7 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [context]="dev/docker/node-semantic-release"
     [depends_on]="bash"
     [build_args]=""
-    [env_to_args]="DOCKERHUB_USERNAME PLATFORM_TAG BASH_CHECKSUM"
+    [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
 # Ordine di build delle immagini

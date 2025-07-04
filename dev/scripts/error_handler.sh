@@ -13,6 +13,20 @@ error_handler() {
   exit $code
 }
 
+# Funzione per loggare ed eseguire comandi
+log_and_execute() {
+    echo "🔍 [$(date '+%Y-%m-%d %H:%M:%S')] Executing: $*" >&2
+    "$@"
+    local exit_code=$?
+    if [ $exit_code -eq 0 ]; then
+        echo "✅ [$(date '+%Y-%m-%d %H:%M:%S')] Command succeeded" >&2
+    else
+        echo "❌ [$(date '+%Y-%m-%d %H:%M:%S')] Command failed with exit code: $exit_code" >&2
+    fi
+    return $exit_code
+}
+
+
 # Set up the trap to catch errors
 trap 'error_handler ${LINENO} "$BASH_COMMAND" $?' ERR
 

@@ -1,3 +1,4 @@
+
 ARG DOCKERHUB_USERNAME
 ARG BASH_CHECKSUM
 ARG PLATFORM_TAG
@@ -39,6 +40,10 @@ RUN npm install -g \
     @semantic-release/github \
     @semantic-release/git
 
+RUN npm install -g \
+    @commitlint/cli \
+    @commitlint/config-conventional
+
 # Install additional tools useful for CI/CD
 RUN npm install -g \
     commitizen \
@@ -47,6 +52,24 @@ RUN npm install -g \
 
 # Configure commitizen to use conventional changelog
 RUN echo '{ "path": "cz-conventional-changelog" }' > /home/bashuser/.czrc
+
+# Create a wrapper script for semantic-release that uses the global config
+RUN cat > /usr/local/bin/semantic-release-wrapper << 'EOF'
+#!/bin/bash
+
+# Set default config file if none exists in the project
+if [ ! -f .releaserc.json ] && [ ! -f .releaserc.yml ] && [ ! -f .releaserc.yaml ] && [ ! -f .releaserc.js ]; then
+    echo "Using default semantic-release configuration..."
+    export SEMANTIC_RELEASE_CONFIG="/home/bashuser/.config/semantic-release/config.json"
+    semantic-release --extends "$SEMANTIC_RELEASE_CONFIG" "$@"
+else
+    echo "Using project-specific semantic-release configuration..."
+    semantic-release "$@"
+fi
+EOF
+
+RUN chmod +x /usr/local/bin/semantic-release-wrapper
+
 
 # Set up environment for GitHub Actions
 ENV CI=true
@@ -68,6 +91,28 @@ WORKDIR /workdir
 
 # Switch to non-root user for better security
 USER bashuser
+
+# Create default semantic-release configuration that works globally
+RUN mkdir -p /home/bashuser/.config/semantic-release
+RUN cat > /home/bashuser/.config/semantic-release/config.json << 'EOF'
+{
+  "branches": ["main", "master"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
+    "@semantic-release/github",
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "package.json", "package-lock.json"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}
+EOF
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 

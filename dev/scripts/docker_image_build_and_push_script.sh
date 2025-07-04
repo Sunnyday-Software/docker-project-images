@@ -56,7 +56,7 @@ try_pull_image() {
     local image_tag="$1"
     echo "🔄 Tentativo di pull dell'immagine: $image_tag"
 
-    if docker pull "$image_tag" 2>/dev/null; then
+    if docker pull -q "$image_tag" 2>/dev/null; then
         echo "✅ Pull completato con successo per: $image_tag"
         return 0
     else
@@ -121,10 +121,12 @@ build_single_image() {
 
     # Costruisci il comando docker build
     echo "🔨 Procedo con il build dell'immagine: $full_tag"
-    local build_cmd="docker build"
+    local build_cmd="docker --debug build"
     build_cmd+=" --platform $platform"
     build_cmd+=" -f $dockerfile"
     build_cmd+=" -t $full_tag"
+    build_cmd+=" --build-arg PLATFORM_TAG=$platform_tag"
+
 
     # Aggiungi build args se presenti
     if [ -n "$build_args" ]; then
@@ -174,7 +176,7 @@ push_single_image() {
     local full_tag="${full_image_name}:${image_tag}"
 
     echo "📤 Pushing: $full_tag"
-    docker push "$full_tag"
+    log_and_execute docker push -q "$full_tag"
 }
 
 # Funzione per verificare se un'immagine è multipiattaforma
@@ -208,25 +210,25 @@ create_manifests() {
         echo "📦 Creazione manifesti per amd64 e arm64..."
 
         # Crea manifesto per checksum tag
-        echo "📋 ${full_image_name}:${expected_checksum}"
-        docker manifest create "${full_image_name}:${expected_checksum}" \
+        echo "📋 ${full_image_name}:${expected_checksum} -> ${full_image_name}:${expected_checksum}-amd64/arm64"
+        log_and_execute docker manifest create --amend "${full_image_name}:${expected_checksum}" \
             "${full_image_name}:${expected_checksum}-amd64" \
             "${full_image_name}:${expected_checksum}-arm64"
-        docker manifest push "${full_image_name}:${expected_checksum}"
+        log_and_execute docker manifest push "${full_image_name}:${expected_checksum}"
 
         # Crea manifesto per version tag
-        echo "📋 ${full_image_name}:${expected_version}"
-        docker manifest create "${full_image_name}:${expected_version}" \
+        echo "📋 ${full_image_name}:${expected_version} -> ${full_image_name}:${expected_checksum}-amd64/arm64"
+        log_and_execute docker manifest create --amend "${full_image_name}:${expected_version}" \
             "${full_image_name}:${expected_checksum}-amd64" \
             "${full_image_name}:${expected_checksum}-arm64"
-        docker manifest push "${full_image_name}:${expected_version}"
+        log_and_execute docker manifest push "${full_image_name}:${expected_version}"
 
         # Crea manifesto per latest tag
-        echo "📋 ${full_image_name}:latest"
-        docker manifest create "${full_image_name}:latest" \
+        echo "📋 ${full_image_name}:latest -> ${full_image_name}:${expected_checksum}-amd64/arm64"
+        log_and_execute docker manifest create --amend "${full_image_name}:latest" \
             "${full_image_name}:${expected_checksum}-amd64" \
             "${full_image_name}:${expected_checksum}-arm64"
-        docker manifest push "${full_image_name}:latest"
+        log_and_execute docker manifest push "${full_image_name}:latest"
 
     else
         echo "🔧 Immagine single-platform: $image_name"
