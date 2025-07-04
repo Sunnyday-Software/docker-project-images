@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 load_file_with_export() {
     local env_file="$1"
