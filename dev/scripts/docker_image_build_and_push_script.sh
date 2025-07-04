@@ -1,49 +1,4 @@
-#!/usr/bin/env bash
-
-# Script per la build e il push di immagini Docker
-#
-# Utilizzo:
-#   ./docker_image_build_and_push_script.sh [opzioni] [immagini...]
-#
-# Opzioni:
-#   --amd64-only     Esegue la build solo per architettura amd64, anche se le immagini
-#                    supportano entrambe le architetture. Le immagini rimangono in locale.
-#   --arm64-only     Esegue la build solo per architettura arm64, anche se le immagini
-#                    supportano entrambe le architetture. Le immagini rimangono in locale.
-#
-# Argomenti:
-#   immagini...      Elenco opzionale di nomi di immagini da buildare.
-#                    Se specificato, sostituisce l'ordine definito in BUILD_ORDER.
-#
-# Esempi:
-#   ./docker_image_build_and_push_script.sh                     # Build tutte le immagini
-#   ./docker_image_build_and_push_script.sh --amd64-only        # Build solo amd64, no push
-#   ./docker_image_build_and_push_script.sh bash make           # Build solo bash e make
-#   ./docker_image_build_and_push_script.sh --arm64-only bash   # Build solo bash per arm64
-#
-
-# Default values
-ARCH_ONLY=""
-CUSTOM_IMAGES=()
-
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --amd64-only)
-            ARCH_ONLY="amd64"
-            shift
-            ;;
-        --arm64-only)
-            ARCH_ONLY="arm64"
-            shift
-            ;;
-        *)
-            # If not a recognized option, treat as image name
-            CUSTOM_IMAGES+=("$1")
-            shift
-            ;;
-    esac
-done
+#!/bin/bash
 
 load_file_with_export() {
     local env_file="$1"
@@ -82,27 +37,12 @@ echo ""
 env
 echo "------------------------------"
 
-# Override platforms if ARCH_ONLY is set
-if [ -n "$ARCH_ONLY" ]; then
-    PLATFORMS="$ARCH_ONLY"
-    echo "🔧 Modalità single-architecture: $ARCH_ONLY"
-else
-    # Default platforms se non specificato
-    PLATFORMS="${DOCKER_PLATFORMS:-amd64,arm64}"
-fi
+# Default platforms se non specificato
+PLATFORMS="${DOCKER_PLATFORMS:-amd64,arm64}"
 IFS=',' read -ra PLATFORM_LIST <<< "$PLATFORMS"
 
-# Use custom image list if provided
-if [ ${#CUSTOM_IMAGES[@]} -gt 0 ]; then
-    echo "🔄 Utilizzo lista di immagini personalizzata: ${CUSTOM_IMAGES[*]}"
-fi
-
 echo "🚀 Avvio build delle immagini Docker"
-if [ ${#CUSTOM_IMAGES[@]} -gt 0 ]; then
-    echo "📋 Ordine di build personalizzato: ${CUSTOM_IMAGES[*]}"
-else
-    echo "📋 Ordine di build: ${BUILD_ORDER[*]}"
-fi
+echo "📋 Ordine di build: ${BUILD_ORDER[*]}"
 echo "🏗️  Piattaforme richieste: ${PLATFORMS}"
 
 # Funzione per verificare se un'immagine esiste localmente
@@ -322,28 +262,8 @@ main() {
         echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
     fi
 
-    # Determine which images to build
-    local images_to_build=()
-
-    if [ ${#CUSTOM_IMAGES[@]} -gt 0 ]; then
-        # Convert image names to image references
-        for custom_image in "${CUSTOM_IMAGES[@]}"; do
-            # Find the corresponding image reference
-            for image_ref in "${BUILD_ORDER[@]}"; do
-                local -n temp_image_data=$image_ref
-                if [ "${temp_image_data[name]}" = "$custom_image" ]; then
-                    images_to_build+=("$image_ref")
-                    break
-                fi
-            done
-        done
-    else
-        # Use default build order
-        images_to_build=("${BUILD_ORDER[@]}")
-    fi
-
     # Ciclo attraverso le immagini nell'ordine specificato
-    for image_ref in "${images_to_build[@]}"; do
+    for image_ref in "${BUILD_ORDER[@]}"; do
         local -n image_data=$image_ref
         local image_name="${image_data[name]}"
 
@@ -368,17 +288,12 @@ main() {
                 if build_single_image "$image_ref" "$platform"; then
                     echo "✅ Build completata per $image_name su $platform_full"
 
-                    # Skip push in single-architecture mode
-                    if [ -n "$ARCH_ONLY" ]; then
-                        echo "⏭️  Modalità single-architecture: salto il push di $image_name su $platform_full"
+                    # Push immediato dopo il build
+                    if push_single_image "$image_ref" "$platform"; then
+                        echo "✅ Push completato per $image_name su $platform_full"
                     else
-                        # Push immediato dopo il build
-                        if push_single_image "$image_ref" "$platform"; then
-                            echo "✅ Push completato per $image_name su $platform_full"
-                        else
-                            echo "❌ Errore durante il push di $image_name su $platform_full"
-                            exit 1
-                        fi
+                        echo "❌ Errore durante il push di $image_name su $platform_full"
+                        exit 1
                     fi
                 else
                     echo "❌ Errore durante il build di $image_name su $platform_full"
@@ -389,31 +304,12 @@ main() {
             fi
         done
 
-        # In single-architecture mode, tag as latest but don't push
-        if [ -n "$ARCH_ONLY" ]; then
-            echo "🏷️  Modalità single-architecture: tagging locale come latest per $image_name"
-
-            local normalized_name=$(echo "$image_name" | tr '[:lower:]' '[:upper:]' | sed 's/[^[:alnum:]]/_/g')
-            local checksum_var="${normalized_name}_CHECKSUM"
-            local expected_checksum=${!checksum_var}
-            local full_image_name="${DOCKERHUB_USERNAME}/${image_name}"
-            local platform_tag="$ARCH_ONLY"
-            local image_tag="${expected_checksum}-${platform_tag}"
-            local full_tag="${full_image_name}:${image_tag}"
-
-            echo "🏷️  Tagging ${full_tag} come latest (solo locale)"
-            docker tag "$full_tag" "${full_image_name}:latest"
-            echo "✅ Immagine taggata localmente come latest: ${full_image_name}:latest"
-
-            echo "⏭️  Modalità single-architecture: salto la creazione dei manifesti per $image_name"
+        # Crea manifesti dopo che tutte le piattaforme sono state processate
+        if create_manifests "$image_ref"; then
+            echo "✅ Manifesti creati con successo per $image_name"
         else
-            # Crea manifesti dopo che tutte le piattaforme sono state processate
-            if create_manifests "$image_ref"; then
-                echo "✅ Manifesti creati con successo per $image_name"
-            else
-                echo "❌ Errore durante la creazione dei manifesti per $image_name"
-                exit 1
-            fi
+            echo "❌ Errore durante la creazione dei manifesti per $image_name"
+            exit 1
         fi
 
         echo "✅ === COMPLETATA IMAGE: $image_name ==="
