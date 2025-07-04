@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
+# Parse command line arguments
+NOPUSH=false
+for arg in "$@"; do
+    case $arg in
+        --nopush)
+            NOPUSH=true
+            shift
+            ;;
+        *)
+            # Unknown option, keep it for other processing
+            ;;
+    esac
+done
+
 load_file_with_export() {
     local env_file="$1"
 
@@ -44,6 +58,9 @@ IFS=',' read -ra PLATFORM_LIST <<< "$PLATFORMS"
 echo "🚀 Avvio build delle immagini Docker"
 echo "📋 Ordine di build: ${BUILD_ORDER[*]}"
 echo "🏗️  Piattaforme richieste: ${PLATFORMS}"
+if [ "$NOPUSH" = true ]; then
+    echo "⚠️  Modalità --nopush attiva: le immagini non verranno pushate"
+fi
 
 # Funzione per verificare se un'immagine esiste localmente
 image_exists_locally() {
@@ -92,6 +109,8 @@ build_single_image() {
     local image_tag="${expected_checksum}-${platform_tag}"
     local full_tag="${full_image_name}:${image_tag}"
 
+    local latest_tag="${full_image_name}:latest-${platform_tag}"
+
     echo "🔨 Building: $full_tag"
     echo "   📁 Context: $context"
     echo "   📄 Dockerfile: $dockerfile"
@@ -125,6 +144,7 @@ build_single_image() {
     build_cmd+=" --platform $platform"
     build_cmd+=" -f $dockerfile"
     build_cmd+=" -t $full_tag"
+    build_cmd+=" --build-arg IMAGE_FULL_NAME=\"$full_tag\" "
     build_cmd+=" --build-arg PLATFORM_TAG=$platform_tag"
 
 
@@ -156,6 +176,8 @@ build_single_image() {
     echo "   ⚡ Comando: $build_cmd"
     eval "$build_cmd"
 
+    log_and_execute docker tag $full_tag $latest_tag
+
     return 0
 }
 
@@ -175,8 +197,11 @@ push_single_image() {
     local image_tag="${expected_checksum}-${platform_tag}"
     local full_tag="${full_image_name}:${image_tag}"
 
+    local latest_tag="${full_image_name}:latest-${platform_tag}"
+
     echo "📤 Pushing: $full_tag"
     log_and_execute docker push -q "$full_tag"
+    log_and_execute docker push -q "$latest_tag"
 }
 
 # Funzione per verificare se un'immagine è multipiattaforma
@@ -290,12 +315,16 @@ main() {
                 if build_single_image "$image_ref" "$platform"; then
                     echo "✅ Build completata per $image_name su $platform_full"
 
-                    # Push immediato dopo il build
-                    if push_single_image "$image_ref" "$platform"; then
-                        echo "✅ Push completato per $image_name su $platform_full"
+                    # Push immediato dopo il build (solo se non è attivo --nopush)
+                    if [ "$NOPUSH" = true ]; then
+                        echo "⏭️  Push saltato per $image_name su $platform_full (--nopush attivo)"
                     else
-                        echo "❌ Errore durante il push di $image_name su $platform_full"
-                        exit 1
+                        if push_single_image "$image_ref" "$platform"; then
+                            echo "✅ Push completato per $image_name su $platform_full"
+                        else
+                            echo "❌ Errore durante il push di $image_name su $platform_full"
+                            exit 1
+                        fi
                     fi
                 else
                     echo "❌ Errore durante il build di $image_name su $platform_full"
@@ -306,19 +335,27 @@ main() {
             fi
         done
 
-        # Crea manifesti dopo che tutte le piattaforme sono state processate
-        if create_manifests "$image_ref"; then
-            echo "✅ Manifesti creati con successo per $image_name"
+        # Crea manifesti dopo che tutte le piattaforme sono state processate (solo se non è attivo --nopush)
+        if [ "$NOPUSH" = true ]; then
+            echo "⏭️  Creazione manifesti saltata per $image_name (--nopush attivo)"
         else
-            echo "❌ Errore durante la creazione dei manifesti per $image_name"
-            exit 1
+            if create_manifests "$image_ref"; then
+                echo "✅ Manifesti creati con successo per $image_name"
+            else
+                echo "❌ Errore durante la creazione dei manifesti per $image_name"
+                exit 1
+            fi
         fi
 
         echo "✅ === COMPLETATA IMAGE: $image_name ==="
     done
 
     echo ""
-    echo "🎉 Build e push di tutte le immagini completati!"
+    if [ "$NOPUSH" = true ]; then
+        echo "🎉 Build di tutte le immagini completato! (Push saltato per --nopush)"
+    else
+        echo "🎉 Build e push di tutte le immagini completati!"
+    fi
 }
 
 # Esegui solo se script chiamato direttamente

@@ -2,6 +2,7 @@
 FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG IMAGE_FULL_NAME
 
 ENV USER=bashuser
 ENV GROUP=bashuser
@@ -10,6 +11,8 @@ ENV LANG=en_US.utf8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 ENV HOME_DIR=/home/$USER
+
+RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 # explicitly set user/group IDs
 RUN set -eux; \

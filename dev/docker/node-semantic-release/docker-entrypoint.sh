@@ -2,7 +2,7 @@
 
 # https://github.com/Yelp/dumb-init
 
-set -euo pipefail
+set -eo pipefail
 
 # Trap per cleanup
 cleanup() {
