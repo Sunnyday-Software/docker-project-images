@@ -1,8 +1,6 @@
 chmod +x ./dev/scripts/*.sh
 chmod +x ./dpm/*
 
-export DOCKER_BUILDKIT=1
-
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
