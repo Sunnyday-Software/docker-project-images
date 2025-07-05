@@ -2,11 +2,22 @@
 
 # Parse command line arguments
 NOPUSH=false
+CMD_PRN=false
+AMD64_PLATFORM=true
+ARM64_PLATFORM=true
 for arg in "$@"; do
     case $arg in
-        --nopush)
+        --no-push)
             NOPUSH=true
-            shift
+            ;;
+        --cmd-prn)
+            CMD_PRN=true
+            ;;
+        --amd64-only)
+            ARM64_PLATFORM=false
+            ;;
+        --arm64-only)
+            AMD64_PLATFORM=false
             ;;
         *)
             # Unknown option, keep it for other processing
@@ -14,12 +25,18 @@ for arg in "$@"; do
     esac
 done
 
+log() {
+    if [ "$CMD_PRN" != true ]; then
+        echo "$*"
+    fi
+}
+
 load_file_with_export() {
     local env_file="$1"
 
     if [ -f "$env_file" ]; then
         local filename=$(basename "$env_file")
-        echo "Loading $filename..."
+        log "Loading $filename..."
 
         # Abilita export automatico
         set -a
@@ -29,11 +46,10 @@ load_file_with_export() {
 
         return 0
     else
-        echo "File not found: $env_file"
+        log "File not found: $env_file"
         return 1
     fi
 }
-
 
 # Source
 source "$(dirname "$0")/error_handler.sh"
@@ -45,40 +61,80 @@ source "$(dirname "$0")/../../build_config.sh"
 
 set -e
 
-echo "Script di build delle immagini"
-echo "$(dirname "$0")"
-echo ""
-env
-echo "------------------------------"
 
-# Default platforms se non specificato
-PLATFORMS="${DOCKER_PLATFORMS:-amd64,arm64}"
+#log or execute
+lx() {
+  if [ "$CMD_PRN" = true ]; then
+    echo "$*"
+    return 0
+  else
+    log_and_execute "$@"
+    return $?
+  fi
+}
+
+
+log "Script di build delle immagini"
+log "$(dirname "$0")"
+log ""
+log env
+log "------------------------------"
+
+# Costruisci la lista delle piattaforme basata sui flag
+ENABLED_PLATFORMS=()
+if [ "$AMD64_PLATFORM" = true ]; then
+    ENABLED_PLATFORMS+=("amd64")
+fi
+if [ "$ARM64_PLATFORM" = true ]; then
+    ENABLED_PLATFORMS+=("arm64")
+fi
+
+# Se nessuna piattaforma è abilitata, usa il default
+if [ ${#ENABLED_PLATFORMS[@]} -eq 0 ]; then
+    ENABLED_PLATFORMS=("amd64" "arm64")
+fi
+
+# Costruisci la stringa PLATFORMS
+PLATFORMS=$(IFS=','; echo "${ENABLED_PLATFORMS[*]}")
 IFS=',' read -ra PLATFORM_LIST <<< "$PLATFORMS"
 
-echo "🚀 Avvio build delle immagini Docker"
-echo "📋 Ordine di build: ${BUILD_ORDER[*]}"
-echo "🏗️  Piattaforme richieste: ${PLATFORMS}"
+log "🚀 Avvio build delle immagini Docker"
+log "📋 Ordine di build: ${BUILD_ORDER[*]}"
+log "🏗️  Piattaforme richieste: ${PLATFORMS}"
 if [ "$NOPUSH" = true ]; then
-    echo "⚠️  Modalità --nopush attiva: le immagini non verranno pushate"
+    log "⚠️  Modalità --no-push attiva: le immagini non verranno pushate"
 fi
 
 # Funzione per verificare se un'immagine esiste localmente
 image_exists_locally() {
-    local image_tag="$1"
-    docker image inspect "$image_tag" &> /dev/null
+    if [ "$CMD_PRN" = true ]; then
+      return 1
+    else
+      local image_tag="$1"
+      if docker image inspect "$image_tag" &> /dev/null; then
+          return 0  # True
+      else
+          return 1  # False
+      fi
+    fi
 }
 
 # Funzione per tentare il pull di un'immagine
 try_pull_image() {
     local image_tag="$1"
-    echo "🔄 Tentativo di pull dell'immagine: $image_tag"
+    log "🔄 Tentativo di pull dell'immagine: $image_tag"
 
-    if docker pull -q "$image_tag" 2>/dev/null; then
-        echo "✅ Pull completato con successo per: $image_tag"
-        return 0
+    if [ "$CMD_PRN" = true ]; then
+      echo "docker pull -q \"$image_tag\""
+      return 1
     else
-        echo "⚠️  Pull fallito per: $image_tag (l'immagine potrebbe non esistere nel registry)"
-        return 1
+      if docker pull -q "$image_tag" 2>/dev/null; then
+          log "✅ Pull completato con successo per: $image_tag"
+          return 0
+      else
+          log "⚠️  Pull fallito per: $image_tag (l'immagine potrebbe non esistere nel registry)"
+          return 1
+      fi
     fi
 }
 
@@ -111,35 +167,35 @@ build_single_image() {
 
     local latest_tag="${full_image_name}:latest-${platform_tag}"
 
-    echo "🔨 Building: $full_tag"
-    echo "   📁 Context: $context"
-    echo "   📄 Dockerfile: $dockerfile"
-    echo "   🏗️  Platform: $platform"
+    log "🔨 Building: $full_tag"
+    log "   📁 Context: $context"
+    log "   📄 Dockerfile: $dockerfile"
+    log "   🏗️  Platform: $platform"
 
     # Verifica se l'immagine esiste già localmente, altrimenti tenta il pull
     local image_available=false
     if image_exists_locally "$full_tag"; then
-        echo "✅ Immagine già presente localmente: $full_tag"
+        log "✅ Immagine già presente localmente: $full_tag"
         image_available=true
     else
-        echo "🔍 Immagine non trovata localmente, tentativo di pull..."
+        log "🔍 Immagine non trovata localmente, tentativo di pull..."
         if try_pull_image "$full_tag"; then
-            echo "✅ Immagine ottenuta tramite pull: $full_tag"
+            log "✅ Immagine ottenuta tramite pull: $full_tag"
             image_available=true
         else
-            echo "⚠️  Pull fallito, procedo con il build"
+            log "⚠️  Pull fallito, procedo con il build"
             image_available=false
         fi
     fi
 
     # Se l'immagine è già disponibile, salta il build
     if [ "$image_available" = true ]; then
-        echo "⏭️  Immagine già presente, salto il build: $full_tag"
+        log "⏭️  Immagine già presente, salto il build: $full_tag"
         return 0
     fi
 
     # Costruisci il comando docker build
-    echo "🔨 Procedo con il build dell'immagine: $full_tag"
+    log "🔨 Procedo con il build dell'immagine: $full_tag"
     local build_cmd="docker --debug build"
     build_cmd+=" --platform $platform"
     build_cmd+=" -f $dockerfile"
@@ -165,7 +221,7 @@ build_single_image() {
                 escaped_value="${value//\"/\\\"}"  # Escape delle virgolette
                 build_cmd+=" --build-arg $env_var=\"$escaped_value\""
             else
-                echo "❌ Variabile ambientale richiesta non trovata: $env_var"
+                log "❌ Variabile ambientale richiesta non trovata: $env_var"
                 return 1
             fi
         done
@@ -173,10 +229,14 @@ build_single_image() {
 
     build_cmd+=" $context"
 
-    echo "   ⚡ Comando: $build_cmd"
-    eval "$build_cmd"
+    log "   ⚡ Comando: $build_cmd"
+    if [ "$CMD_PRN" = true ]; then
+      echo "$build_cmd"
+    else
+      eval "$build_cmd"
+    fi
 
-    log_and_execute docker tag $full_tag $latest_tag
+    lx docker tag $full_tag $latest_tag
 
     return 0
 }
@@ -199,9 +259,9 @@ push_single_image() {
 
     local latest_tag="${full_image_name}:latest-${platform_tag}"
 
-    echo "📤 Pushing: $full_tag"
-    log_and_execute docker push -q "$full_tag"
-    log_and_execute docker push -q "$latest_tag"
+    log "📤 Pushing: $full_tag"
+    lx docker push -q "$full_tag"
+    lx docker push -q "$latest_tag"
 }
 
 # Funzione per verificare se un'immagine è multipiattaforma
@@ -227,66 +287,82 @@ create_manifests() {
 
     local full_image_name="${DOCKERHUB_USERNAME}/${image_name}"
 
-    echo ""
-    echo "🏷️  === CREAZIONE MANIFESTI PER: $image_name ==="
+    log ""
+    log "🏷️  === CREAZIONE MANIFESTI PER: $image_name ==="
 
     if is_multiplatform "$image_ref"; then
-        echo "🏗️  Immagine multipiattaforma: $image_name"
-        echo "📦 Creazione manifesti per amd64 e arm64..."
+        log "🏗️  Immagine multipiattaforma: $image_name"
+        log "📦 Creazione manifesti per le piattaforme abilitate: ${PLATFORMS}..."
+
+        # Costruisci la lista delle immagini per il manifesto
+        local manifest_images=()
+        for platform in "${ENABLED_PLATFORMS[@]}"; do
+            manifest_images+=("${full_image_name}:${expected_checksum}-${platform}")
+        done
 
         # Crea manifesto per checksum tag
-        echo "📋 ${full_image_name}:${expected_checksum} -> ${full_image_name}:${expected_checksum}-amd64/arm64"
-        log_and_execute docker manifest create --amend "${full_image_name}:${expected_checksum}" \
-            "${full_image_name}:${expected_checksum}-amd64" \
-            "${full_image_name}:${expected_checksum}-arm64"
-        log_and_execute docker manifest push "${full_image_name}:${expected_checksum}"
+        log "📋 ${full_image_name}:${expected_checksum} -> ${manifest_images[*]}"
+
+        lx docker manifest rm "${full_image_name}:${expected_checksum}"
+
+        lx docker manifest create --amend "${full_image_name}:${expected_checksum}" \
+            "${manifest_images[@]}"
+        lx docker manifest push "${full_image_name}:${expected_checksum}"
 
         # Crea manifesto per version tag
-        echo "📋 ${full_image_name}:${expected_version} -> ${full_image_name}:${expected_checksum}-amd64/arm64"
-        log_and_execute docker manifest create --amend "${full_image_name}:${expected_version}" \
-            "${full_image_name}:${expected_checksum}-amd64" \
-            "${full_image_name}:${expected_checksum}-arm64"
-        log_and_execute docker manifest push "${full_image_name}:${expected_version}"
+        log "📋 ${full_image_name}:${expected_version} -> ${manifest_images[*]}"
+
+        lx docker manifest rm "${full_image_name}:${expected_version}"
+
+        lx docker manifest create --amend "${full_image_name}:${expected_version}" \
+            "${manifest_images[@]}"
+        lx docker manifest push "${full_image_name}:${expected_version}"
 
         # Crea manifesto per latest tag
-        echo "📋 ${full_image_name}:latest -> ${full_image_name}:${expected_checksum}-amd64/arm64"
-        log_and_execute docker manifest create --amend "${full_image_name}:latest" \
-            "${full_image_name}:${expected_checksum}-amd64" \
-            "${full_image_name}:${expected_checksum}-arm64"
-        log_and_execute docker manifest push "${full_image_name}:latest"
+        log "📋 ${full_image_name}:latest -> ${manifest_images[*]}"
+
+        lx docker manifest rm "${full_image_name}:latest"
+
+        lx docker manifest create --amend "${full_image_name}:latest" \
+            "${manifest_images[@]}"
+        lx docker manifest push "${full_image_name}:latest"
 
     else
-        echo "🔧 Immagine single-platform: $image_name"
-        echo "🏷️  Tagging solo con latest (assumendo amd64)..."
+        log "🔧 Immagine single-platform: $image_name"
+        log "🏷️  Tagging solo con latest (assumendo amd64)..."
 
         # Per immagini single-platform, tagga solo l'immagine esistente come latest
         single_platform_tag="${full_image_name}:${expected_checksum}-amd64"
 
-        echo "🏷️  Tagging ${single_platform_tag} come latest"
-        docker tag "$single_platform_tag" "${full_image_name}:latest"
-        docker push "${full_image_name}:latest"
+        log "🏷️  Tagging ${single_platform_tag} come latest"
+        lx docker tag "$single_platform_tag" "${full_image_name}:latest"
+        lx docker push "${full_image_name}:latest"
 
         # Tagga anche con version
-        echo "🏷️  Tagging ${single_platform_tag} come ${expected_version}"
-        docker tag "$single_platform_tag" "${full_image_name}:${expected_version}"
-        docker push "${full_image_name}:${expected_version}"
+        log "🏷️  Tagging ${single_platform_tag} come ${expected_version}"
+        lx docker tag "$single_platform_tag" "${full_image_name}:${expected_version}"
+        lx docker push "${full_image_name}:${expected_version}"
     fi
 
-    echo "✅ === MANIFESTI COMPLETATI PER: $image_name ==="
+    log "✅ === MANIFESTI COMPLETATI PER: $image_name ==="
 }
 
 # Funzione principale di build
 main() {
     # Verifica delle dipendenze Docker
     if ! command -v docker &> /dev/null; then
-        echo "❌ Docker non trovato!"
+        log "❌ Docker non trovato!"
         exit 1
     fi
 
     # Login Docker Hub se necessario
     if [ -n "${DOCKERHUB_TOKEN:-}" ] && [ -n "${DOCKERHUB_USERNAME:-}" ]; then
-        echo "🔐 Login Docker Hub..."
-        echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+        log "🔐 Login Docker Hub..."
+        if [ "$CMD_PRN" = true ]; then
+          echo "echo \"\$DOCKERHUB_TOKEN\" | docker login -u \"\$DOCKERHUB_USERNAME\" --password-stdin"
+        else
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+        fi
     fi
 
     # Ciclo attraverso le immagini nell'ordine specificato
@@ -294,13 +370,13 @@ main() {
         local -n image_data=$image_ref
         local image_name="${image_data[name]}"
 
-        echo ""
-        echo "🏗️  === BUILDING IMAGE: $image_name ==="
+        log ""
+        log "🏗️  === BUILDING IMAGE: $image_name ==="
 
         # Verifica dipendenze
         local dependencies=$(get_dependencies "$image_ref")
         if [ -n "$dependencies" ]; then
-            echo "📦 Dipendenze: $dependencies"
+            log "📦 Dipendenze: $dependencies"
             # Qui potresti aggiungere controlli per verificare che le dipendenze siano già state buildinate
         fi
 
@@ -309,52 +385,55 @@ main() {
             local platform="linux/$platform_full"
 
             if supports_platform "$image_ref" "$platform_full"; then
-                echo "✅ Piattaforma $platform_full supportata per $image_name"
+                log "✅ Piattaforma $platform_full supportata per $image_name"
 
                 # Build
                 if build_single_image "$image_ref" "$platform"; then
-                    echo "✅ Build completata per $image_name su $platform_full"
+                    log "✅ Build completata per $image_name su $platform_full"
 
                     # Push immediato dopo il build (solo se non è attivo --nopush)
                     if [ "$NOPUSH" = true ]; then
-                        echo "⏭️  Push saltato per $image_name su $platform_full (--nopush attivo)"
+                        log "⏭️  Push saltato per $image_name su $platform_full (--nopush attivo)"
                     else
                         if push_single_image "$image_ref" "$platform"; then
-                            echo "✅ Push completato per $image_name su $platform_full"
+                            log "✅ Push completato per $image_name su $platform_full"
                         else
-                            echo "❌ Errore durante il push di $image_name su $platform_full"
+                            log "❌ Errore durante il push di $image_name su $platform_full"
                             exit 1
                         fi
                     fi
                 else
-                    echo "❌ Errore durante il build di $image_name su $platform_full"
+                    log "❌ Errore durante il build di $image_name su $platform_full"
                     exit 1
                 fi
             else
-                echo "⏭️  Piattaforma $platform_full non supportata per $image_name, salto"
+                log "⏭️  Piattaforma $platform_full non supportata per $image_name, salto"
             fi
         done
 
         # Crea manifesti dopo che tutte le piattaforme sono state processate (solo se non è attivo --nopush)
         if [ "$NOPUSH" = true ]; then
-            echo "⏭️  Creazione manifesti saltata per $image_name (--nopush attivo)"
-        else
+            log "⏭️  Creazione manifesti saltata per $image_name (--nopush attivo)"
+        elif [ "$AMD64_PLATFORM" = true ] && [ "$ARM64_PLATFORM" = true ]; then
+            # Crea manifesti solo se entrambe le piattaforme sono abilitate
             if create_manifests "$image_ref"; then
-                echo "✅ Manifesti creati con successo per $image_name"
+                log "✅ Manifesti creati con successo per $image_name"
             else
-                echo "❌ Errore durante la creazione dei manifesti per $image_name"
+                log "❌ Errore durante la creazione dei manifesti per $image_name"
                 exit 1
             fi
+        else
+            log "⏭️  Creazione manifesti saltata per $image_name (non tutte le piattaforme sono abilitate)"
         fi
 
-        echo "✅ === COMPLETATA IMAGE: $image_name ==="
+        log "✅ === COMPLETATA IMAGE: $image_name ==="
     done
 
-    echo ""
+    log ""
     if [ "$NOPUSH" = true ]; then
-        echo "🎉 Build di tutte le immagini completato! (Push saltato per --nopush)"
+        log "🎉 Build di tutte le immagini completato! (Push saltato per --nopush)"
     else
-        echo "🎉 Build e push di tutte le immagini completati!"
+        log "🎉 Build e push di tutte le immagini completati!"
     fi
 }
 

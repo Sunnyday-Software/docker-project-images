@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Source the error handler
-source "./error_handler.sh"
-
 set -a
 source /etc/image-info
 set +a

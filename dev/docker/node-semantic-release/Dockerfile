@@ -5,8 +5,13 @@ ARG PLATFORM_TAG
 
 FROM ${DOCKERHUB_USERNAME}/bash:${BASH_CHECKSUM}-${PLATFORM_TAG}
 
+ARG IMAGE_FULL_NAME
 ARG NODE_VERSION=22.x
 ARG DEBIAN_FRONTEND=noninteractive
+
+USER root
+
+RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 # Install Node.js
 RUN apt-get update -y && \
@@ -27,92 +32,21 @@ RUN apt-get install -y nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Yarn
-RUN npm install -g yarn
-
-# Install semantic-release and common plugins
-RUN npm install -g \
-    semantic-release \
-    @semantic-release/commit-analyzer \
-    @semantic-release/release-notes-generator \
-    @semantic-release/changelog \
-    @semantic-release/npm \
-    @semantic-release/github \
-    @semantic-release/git
-
-RUN npm install -g \
-    @commitlint/cli \
-    @commitlint/config-conventional
-
-# Install additional tools useful for CI/CD
-RUN npm install -g \
-    commitizen \
-    cz-conventional-changelog \
-    standard-version
-
-# Configure commitizen to use conventional changelog
-RUN echo '{ "path": "cz-conventional-changelog" }' > /home/bashuser/.czrc
-
-# Create a wrapper script for semantic-release that uses the global config
-RUN cat > /usr/local/bin/semantic-release-wrapper << 'EOF'
-#!/bin/bash
-
-# Set default config file if none exists in the project
-if [ ! -f .releaserc.json ] && [ ! -f .releaserc.yml ] && [ ! -f .releaserc.yaml ] && [ ! -f .releaserc.js ]; then
-    echo "Using default semantic-release configuration..."
-    export SEMANTIC_RELEASE_CONFIG="/home/bashuser/.config/semantic-release/config.json"
-    semantic-release --extends "$SEMANTIC_RELEASE_CONFIG" "$@"
-else
-    echo "Using project-specific semantic-release configuration..."
-    semantic-release "$@"
-fi
-EOF
-
-RUN chmod +x /usr/local/bin/semantic-release-wrapper
-
-
-# Set up environment for GitHub Actions
-ENV CI=true
-ENV GITHUB_ACTIONS=true
-
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN dos2unix /usr/local/bin/*.sh && \
-    chmod +x /usr/local/bin/*.sh
-
 # Copy .bashrc.d scripts
-COPY .bashrc.d/*.sh /home/bashuser/.bashrc.d/
-RUN dos2unix /home/bashuser/.bashrc.d/*.sh && \
-    chmod +x /home/bashuser/.bashrc.d/*.sh && \
-    chown bashuser:bashuser -R /home/bashuser/.bashrc.d
+COPY home/ /home/bashuser/
+RUN find /home/bashuser -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \; && \
+    find /home/bashuser/.local/bin -type f -exec chmod +x {} \; && \
+    chown bashuser:bashuser -R /home/bashuser
+
+USER bashuser
+WORKDIR /home/bashuser
+ENV PATH="/home/bashuser/node_modules/.bin:${PATH}"
+
+RUN npm install
+
 
 # Set working directory
 WORKDIR /workdir
-
-# Switch to non-root user for better security
-USER bashuser
-
-# Create default semantic-release configuration that works globally
-RUN mkdir -p /home/bashuser/.config/semantic-release
-RUN cat > /home/bashuser/.config/semantic-release/config.json << 'EOF'
-{
-  "branches": ["main", "master"],
-  "plugins": [
-    "@semantic-release/commit-analyzer",
-    "@semantic-release/release-notes-generator",
-    "@semantic-release/changelog",
-    "@semantic-release/npm",
-    "@semantic-release/github",
-    [
-      "@semantic-release/git",
-      {
-        "assets": ["CHANGELOG.md", "package.json", "package-lock.json"],
-        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-      }
-    ]
-  ]
-}
-EOF
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 

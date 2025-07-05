@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Function to determine the commitlint config file to use
+get_commitlint_config() {
+    # Check for config files in /workdir first
+    if [ -f "/workdir/commitlint.config.mjs" ]; then
+        echo "/workdir/commitlint.config.mjs"
+    elif [ -f "/workdir/commitlint.config.js" ]; then
+        echo "/workdir/commitlint.config.js"
+    elif [ -f "/workdir/.commitlintrc.mjs" ]; then
+        echo "/workdir/.commitlintrc.mjs"
+    elif [ -f "/workdir/.commitlintrc.js" ]; then
+        echo "/workdir/.commitlintrc.js"
+    elif [ -f "/workdir/.commitlintrc.json" ]; then
+        echo "/workdir/.commitlintrc.json"
+    elif [ -f "/workdir/.commitlintrc" ]; then
+        echo "/workdir/.commitlintrc"
+    else
+        # Fallback to home directory config
+        echo "${HOME}/commitlint.config.mjs"
+    fi
+}
+
+# Get the config file to use
+CONFIG_FILE=$(get_commitlint_config)
+
+# Funzione per determinare il tipo di input e gestirlo di conseguenza
+handle_commitlint_input() {
+    local input="$1"
+
+    # Se non c'è input, leggi da stdin
+    if [ -z "$input" ]; then
+        echo "🔍 Leggendo messaggio di commit da stdin..."
+        #commitlint --config "$CONFIG_FILE"
+        npm run --prefix $HOME commitlint:stdin -- --config "$CONFIG_FILE"
+
+        return $?
+    fi
+
+    # Controlla se l'input è un file esistente
+    if [ -f "$input" ]; then
+        echo "🔍 Leggendo messaggio di commit dal file: $input"
+
+        #commitlint --config "$CONFIG_FILE" --edit "$input"
+        npm run --prefix $HOME commitlint:edit -- --config "$CONFIG_FILE" --edit "$input"
+        return $?
+    fi
+
+    # Controlla se l'input sembra un percorso file (contiene / o ha estensione)
+    if [[ "$input" == *"/"* ]] || [[ "$input" == *"."* ]]; then
+        echo "⚠️  Attenzione: '$input' sembra un percorso file ma il file non esiste"
+        echo "🔍 Trattando come messaggio di commit testuale..."
+    fi
+
+    # Altrimenti, tratta come messaggio di commit testuale
+    echo "🔍 Validando messaggio di commit: \"$input\""
+    #echo "$input" | commitlint --config "$CONFIG_FILE"
+    echo "$input" | npm run --prefix "$HOME" commitlint:stdin -- --config "$CONFIG_FILE"
+    return $?
+}
+
+
+# Gestione dei casi principali
+if [ $# -eq 0 ]; then
+    # Nessun argomento: leggi da stdin
+    handle_commitlint_input ""
+elif [ $# -eq 1 ]; then
+    # Un solo argomento: può essere file o messaggio
+    handle_commitlint_input "$1"
+else
+    # Più argomenti: concatena tutti come un singolo messaggio
+    message="$*"
+    echo "🔍 Validando messaggio di commit multi-argomento: \"$message\""
+    #echo "$message" | commitlint --config "$CONFIG_FILE"
+    echo "$message" | npm run --prefix $HOME commitlint:stdin -- --config "$CONFIG_FILE"
+fi
+
+exit_code=$?
+
+
+
+exit $exit_code

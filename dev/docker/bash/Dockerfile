@@ -12,6 +12,7 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 ENV HOME_DIR=/home/$USER
 
+
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 # explicitly set user/group IDs
@@ -36,6 +37,7 @@ RUN apt-get update -y; \
     rsync \
     dos2unix \
     curl \
+    wget \
     gnupg \
     screen \
     tmux \
@@ -82,7 +84,7 @@ USER $USER
 
 ENV PATH="$HOME_DIR/.local/bin:${PATH}"
 
-USER root
+USER bashuser
 
 # Imposta l'entrypoint per eseguire lo script passato come parametro
 CMD ["echo", "Nessuno script specificato."]

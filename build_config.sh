@@ -50,9 +50,9 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
 # Ordine di build delle immagini
 BUILD_ORDER=(
     "IMAGE_MAKE"
-#    "IMAGE_BASH"
-#    "IMAGE_OPENTOFU"
-#    "IMAGE_NODE_SEMANTIC_RELEASE"
+    "IMAGE_BASH"
+    "IMAGE_OPENTOFU"
+    "IMAGE_NODE_SEMANTIC_RELEASE"
 )
 
 # Funzione per ottenere le informazioni di un'immagine
