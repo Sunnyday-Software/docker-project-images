@@ -1,28 +1,10 @@
 #!/bin/bash
 
-# Function to determine the commitlint config file to use
-get_commitlint_config() {
-    # Check for config files in /workdir first
-    if [ -f "/workdir/commitlint.config.mjs" ]; then
-        echo "/workdir/commitlint.config.mjs"
-    elif [ -f "/workdir/commitlint.config.js" ]; then
-        echo "/workdir/commitlint.config.js"
-    elif [ -f "/workdir/.commitlintrc.mjs" ]; then
-        echo "/workdir/.commitlintrc.mjs"
-    elif [ -f "/workdir/.commitlintrc.js" ]; then
-        echo "/workdir/.commitlintrc.js"
-    elif [ -f "/workdir/.commitlintrc.json" ]; then
-        echo "/workdir/.commitlintrc.json"
-    elif [ -f "/workdir/.commitlintrc" ]; then
-        echo "/workdir/.commitlintrc"
-    else
-        # Fallback to home directory config
-        echo "${HOME}/commitlint.config.mjs"
-    fi
-}
+BASE_DIR="/workdir/conventions/commits"
+
 
 # Get the config file to use
-CONFIG_FILE=$(get_commitlint_config)
+CONFIG_FILE=$("${HOME}/commitlint.config.mjs")
 
 # Funzione per determinare il tipo di input e gestirlo di conseguenza
 handle_commitlint_input() {
@@ -77,6 +59,13 @@ fi
 
 exit_code=$?
 
+# Se c'è stato un errore, mostra l'aiuto
+if [ $exit_code -ne 0 ]; then
+    echo ""
+    echo ""
+    echo ""
+    npm run  --prefix "$HOME" commit-help
+fi
 
 
 exit $exit_code

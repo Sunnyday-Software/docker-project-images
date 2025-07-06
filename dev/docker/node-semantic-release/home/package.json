@@ -5,8 +5,8 @@
     "commitlint": "commitlint",
     "commitlint:check": "commitlint --from HEAD~1 --to HEAD",
     "commitlint:edit": "commitlint --edit",
-    "commitlint:stdin": "commitlint"
-
+    "commitlint:stdin": "commitlint",
+    "commit-help": "node commitlint_help.mjs"
   },
   "keywords": [],
   "author": "",

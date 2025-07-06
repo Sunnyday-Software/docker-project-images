@@ -189,51 +189,49 @@ build_single_image() {
     fi
 
     # Se l'immagine è già disponibile, salta il build
-    if [ "$image_available" = true ]; then
-        log "⏭️  Immagine già presente, salto il build: $full_tag"
-        return 0
-    fi
+    if [ ! "$image_available" = true ]; then
 
-    # Costruisci il comando docker build
-    log "🔨 Procedo con il build dell'immagine: $full_tag"
-    local build_cmd="docker --debug build"
-    build_cmd+=" --platform $platform"
-    build_cmd+=" -f $dockerfile"
-    build_cmd+=" -t $full_tag"
-    build_cmd+=" --build-arg IMAGE_FULL_NAME=\"$full_tag\" "
-    build_cmd+=" --build-arg PLATFORM_TAG=$platform_tag"
+      # Costruisci il comando docker build
+      log "🔨 Procedo con il build dell'immagine: $full_tag"
+      local build_cmd="docker --debug build"
+      build_cmd+=" --platform $platform"
+      build_cmd+=" -f $dockerfile"
+      build_cmd+=" -t $full_tag"
+      build_cmd+=" --build-arg IMAGE_FULL_NAME=\"$full_tag\" "
+      build_cmd+=" --build-arg PLATFORM_TAG=$platform_tag"
 
 
-    # Aggiungi build args se presenti
-    if [ -n "$build_args" ]; then
-        IFS=' ' read -ra ARGS <<< "$build_args"
-        for arg in "${ARGS[@]}"; do
-            build_cmd+=" --build-arg $arg"
-        done
-    fi
+      # Aggiungi build args se presenti
+      if [ -n "$build_args" ]; then
+          IFS=' ' read -ra ARGS <<< "$build_args"
+          for arg in "${ARGS[@]}"; do
+              build_cmd+=" --build-arg $arg"
+          done
+      fi
 
-    # Aggiungi env_to_args se presenti
-    if [ -n "$env_to_args" ]; then
-        IFS=' ' read -ra ENV_VARS <<< "$env_to_args"
-        for env_var in "${ENV_VARS[@]}"; do
-            if [ -n "${!env_var:-}" ]; then
-                value="${!env_var}"
-                escaped_value="${value//\"/\\\"}"  # Escape delle virgolette
-                build_cmd+=" --build-arg $env_var=\"$escaped_value\""
-            else
-                log "❌ Variabile ambientale richiesta non trovata: $env_var"
-                return 1
-            fi
-        done
-    fi
+      # Aggiungi env_to_args se presenti
+      if [ -n "$env_to_args" ]; then
+          IFS=' ' read -ra ENV_VARS <<< "$env_to_args"
+          for env_var in "${ENV_VARS[@]}"; do
+              if [ -n "${!env_var:-}" ]; then
+                  value="${!env_var}"
+                  escaped_value="${value//\"/\\\"}"  # Escape delle virgolette
+                  build_cmd+=" --build-arg $env_var=\"$escaped_value\""
+              else
+                  log "❌ Variabile ambientale richiesta non trovata: $env_var"
+                  return 1
+              fi
+          done
+      fi
 
-    build_cmd+=" $context"
+      build_cmd+=" $context"
 
-    log "   ⚡ Comando: $build_cmd"
-    if [ "$CMD_PRN" = true ]; then
-      echo "$build_cmd"
-    else
-      eval "$build_cmd"
+      log "   ⚡ Comando: $build_cmd"
+      if [ "$CMD_PRN" = true ]; then
+        echo "$build_cmd"
+      else
+        eval "$build_cmd"
+      fi
     fi
 
     lx docker tag $full_tag $latest_tag

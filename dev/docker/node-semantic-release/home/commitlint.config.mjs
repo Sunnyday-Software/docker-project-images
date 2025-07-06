@@ -1,50 +1,113 @@
-export default {
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Function to load project-specific configurations
+async function loadProjectConventions() {
+    const conventionsPath = '/workdir/conventions/commits/commitlint-config-conventional.js';
+
+    if (existsSync(conventionsPath)) {
+        try {
+            // Dynamically import project configuration
+            const projectConventions = await import(conventionsPath);
+            return projectConventions.default || projectConventions;
+        } catch (error) {
+            console.warn(`⚠️  No project conventions from ${conventionsPath}:`, error.message);
+            return {};
+        }
+    }
+
+    return {};
+}
+
+// Default configuration
+const defaultConfig = {
     extends: ['@commitlint/config-conventional'],
     rules: {
-        // Lunghezza dell'header del commit (titolo)
-        'header-max-length': [2, 'always', 72],
-        'header-min-length': [2, 'always', 10],
-        
-        // Lunghezza del corpo del commit
-        'body-max-line-length': [2, 'always', 100],
+        // Commit header length (title)
+        'header-max-length': [2, 'always', 120],
+        'header-min-length': [2, 'always', 5],
+        'header-full-stop': [2, 'never', '.'],
+
+        // Description rules
+        'subject-case': [2, 'always', 'sentence-case'],
+        'subject-empty': [2, 'never'],
+        'subject-max-length': [2, 'always', 80],
+        'subject-min-length': [2, 'always', 5],
+        'subject-full-stop': [2, 'never', '.'],
+
+        // Commit body length
+        'body-max-line-length': [2, 'always', 80],
         'body-leading-blank': [2, 'always'],
-        
-        // Lunghezza del footer
+        'body-case': [2, 'always', 'sentence-case'],
+
+        // Footer length
         'footer-leading-blank': [2, 'always'],
-        'footer-max-line-length': [2, 'always', 100],
-        
-        // Regole per il tipo di commit
+        'footer-max-line-length': [2, 'always', 80],
+
+        // Commit type rules
         'type-case': [2, 'always', 'lower-case'],
         'type-empty': [2, 'never'],
         'type-enum': [2, 'always', [
-            'feat',     // nuova funzionalità
+            'feat',     // new feature
             'fix',      // bug fix
-            'docs',     // documentazione
-            'style',    // formattazione, punto e virgola mancanti, ecc.
-            'refactor', // refactoring del codice
-            'perf',     // miglioramenti delle performance
-            'test',     // aggiunta di test
-            'chore',    // aggiornamento task di build, configurazioni, ecc.
-            'ci',       // modifiche ai file di CI
-            'build',    // modifiche che influenzano il sistema di build
-            'revert'    // revert di un commit precedente
+            'docs',     // documentation
+            'style',    // formatting, missing semicolons, etc.
+            'refactor', // code refactoring
+            'perf',     // performance improvements
+            'test',     // adding tests
+            'chore',    // build task updates, configurations, etc.
+            'ci',       // CI file changes
+            'build',    // changes affecting the build system
+            'revert'    // revert of a previous commit
         ]],
-        
-        // Regole per lo scope
+
+        // Scope rules
         'scope-case': [2, 'always', 'lower-case'],
         'scope-max-length': [2, 'always', 20],
-        
-        // Regole per la descrizione
-        'subject-case': [2, 'always', 'lower-case'],
-        'subject-empty': [2, 'never'],
-        'subject-max-length': [2, 'always', 50],
-        'subject-min-length': [2, 'always', 5],
-        'subject-full-stop': [2, 'never', '.'],
-        
-        // Regole per i riferimenti
-        'references-empty': [1, 'never'],
-        
-        // Regole per i signed-off-by
-        'signed-off-by': [0, 'always', 'Signed-off-by:']
+        'scope-empty': [2, 'never'], // This enforces the presence of scope
+        'scope-enum': [2, 'always', [
+            'core',
+            'api',
+            'ui',
+            'auth',
+            'database',
+            'config'
+        ]],
+
+
+
+
+        // Reference rules
+        'references-empty': [2, 'never'],
+
     }
 };
+
+// Load project conventions and merge with default configuration
+const projectConventions = await loadProjectConventions();
+
+// Intelligent merge of configurations
+const finalConfig = {
+    ...defaultConfig,
+    ...projectConventions,
+    rules: {
+        ...defaultConfig.rules,
+        ...projectConventions.rules
+    }
+};
+
+// If the project specifies scopes, add them to the configuration
+if (projectConventions.scopes && Array.isArray(projectConventions.scopes)) {
+    finalConfig.rules['scope-enum'] = [2, 'always', projectConventions.scopes];
+}
+
+// If the project specifies custom types, replace them
+if (projectConventions.types && Array.isArray(projectConventions.types)) {
+    finalConfig.rules['type-enum'] = [2, 'always', projectConventions.types];
+}
+
+export default finalConfig;

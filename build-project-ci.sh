@@ -1,15 +1,15 @@
+#!/usr/bin/env bash
+
 chmod +x ./dev/scripts/*.sh
 chmod +x ./dpm/*
+
+export DOCKER_BUILDKIT=1
 
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
-
-# Set default platform if not defined
-if [ -z "${DOCKER_PLATFORM}" ]; then
-    DOCKER_PLATFORM="linux/amd64"
-    PLATFORM_TAG="amd64"
-fi
+DOCKER_PLATFORM="linux/amd64"
+PLATFORM_TAG="amd64"
 
 # Map architecture names
 case "$ARCH" in
@@ -31,12 +31,7 @@ esac
 # Select appropriate DPM executable
 case "$OS" in
     linux)
-        if [ "$ARCH" = "arm64" ]; then
-            DPM_EXEC="./dpm/dpm-linux-arm64"
-        else
-            DPM_EXEC="./dpm/dpm-linux-${ARCH}-musl"
-        fi
-
+        DPM_EXEC="./dpm/dpm-linux-${ARCH}-musl"
         ;;
     darwin)
         DPM_EXEC="./dpm/dpm-macos-${ARCH}"
@@ -61,15 +56,8 @@ if [ -n "$(git status --porcelain dev/docker/versions.properties)" ]; then
     # Commit e push dei cambiamenti
     git add dev/docker/versions.properties
     git commit -m "chore: update Docker image versions [ci skip]"
+    git push origin HEAD
 
-    # Push solo se non siamo in modalità CI o se esplicitamente richiesto
-    if [ "${CI_PUSH_VERSIONS:-false}" = "true" ]; then
-        git push origin HEAD
-        echo "=== Versions pushate. Fermando l'esecuzione per permettere un nuovo run della CI ==="
-        exit 0
-    else
-        echo "=== Cambiamenti committati localmente. Ricorda di fare push prima della build ==="
-    fi
 fi
 
 
