@@ -28,41 +28,39 @@ const defaultConfig = {
     extends: ['@commitlint/config-conventional'],
     rules: {
         // Commit header length (title)
-        'header-max-length': [2, 'always', 120],
+        'header-max-length': [2, 'always', 140],
         'header-min-length': [2, 'always', 5],
         'header-full-stop': [2, 'never', '.'],
 
         // Description rules
-        'subject-case': [2, 'always', 'sentence-case'],
+        'subject-case': [2, 'always', 'lower-case'],
         'subject-empty': [2, 'never'],
-        'subject-max-length': [2, 'always', 80],
+        'subject-max-length': [2, 'always', 100],
         'subject-min-length': [2, 'always', 5],
         'subject-full-stop': [2, 'never', '.'],
 
         // Commit body length
-        'body-max-line-length': [2, 'always', 80],
+        'body-max-line-length': [2, 'always', 100],
         'body-leading-blank': [2, 'always'],
-        'body-case': [2, 'always', 'sentence-case'],
+        'body-case': [2, 'always', 'lower-case'],
 
         // Footer length
         'footer-leading-blank': [2, 'always'],
-        'footer-max-line-length': [2, 'always', 80],
+        'footer-max-line-length': [2, 'always', 100],
 
         // Commit type rules
         'type-case': [2, 'always', 'lower-case'],
         'type-empty': [2, 'never'],
         'type-enum': [2, 'always', [
+            'build',    // changes affecting the build system
+            'ci',       // CI file changes
+            'docs',     // documentation
             'feat',     // new feature
             'fix',      // bug fix
-            'docs',     // documentation
-            'style',    // formatting, missing semicolons, etc.
-            'refactor', // code refactoring
             'perf',     // performance improvements
+            'refactor', // code refactoring
             'test',     // adding tests
-            'chore',    // build task updates, configurations, etc.
-            'ci',       // CI file changes
-            'build',    // changes affecting the build system
-            'revert'    // revert of a previous commit
+            'style'     // formatting, missing semicolons, etc.
         ]],
 
         // Scope rules
@@ -84,7 +82,12 @@ const defaultConfig = {
         // Reference rules
         'references-empty': [2, 'never'],
 
-    }
+    },
+    parserPreset: {
+        parserOpts: {
+            issuePrefixes: ['#']
+        }
+    },
 };
 
 // Load project conventions and merge with default configuration
