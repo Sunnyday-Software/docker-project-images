@@ -4,7 +4,7 @@ BASE_DIR="/workdir/conventions/commits"
 
 
 # Get the config file to use
-CONFIG_FILE=$("${HOME}/commitlint.config.mjs")
+CONFIG_FILE="${HOME}/commitlint.config.mjs"
 
 # Funzione per determinare il tipo di input e gestirlo di conseguenza
 handle_commitlint_input() {
