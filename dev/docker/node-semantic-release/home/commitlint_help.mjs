@@ -1,33 +1,121 @@
 #!/usr/bin/env node
 
-import config from "./commitlint.config.mjs"
+import config,{typeDescriptions,scopeDescriptions} from "./commitlint.config.mjs"
 import Handlebars from 'handlebars';
 import { readFileSync, writeFileSync } from 'fs';
 
 // Function to show help
 
+// Helper per creare ASCII art con wrapping intelligente
+Handlebars.registerHelper('asciiDiagram', function(types, scopes, options) {
+    const maxLineLength = 90;
 
-// Type descriptions mapping
-const typeDescriptions = {
-    'feat': 'A new feature',
-    'fix': 'A bug fix',
-    'docs': 'Documentation only changes',
-    'style': 'Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)',
-    'refactor': 'A code change that neither fixes a bug nor adds a feature',
-    'perf': 'A code change that improves performance',
-    'test': 'Adding missing tests or correcting existing tests',
-    'build': 'Changes that affect the build system or external dependencies',
-    'ci': 'Changes to our CI configuration files and scripts',
-    'chore': 'Other changes that don\'t modify src or test files',
-    'revert': 'Reverts a previous commit'
-};
+    // Crea la lista dei tipi
+    const typesList = types.map(t => t.type).join('|');
+    const scopesList = scopes.list.join('|');
+
+    // Funzione per wrappare una stringa lunga con continuazione ASCII
+    function wrapWithAscii(content, prefix, continuation) {
+        // Per la prima riga usiamo prefix, per le successive continuation
+        const firstLineMaxLength = maxLineLength - continuation.length;
+        const continuationMaxLength = maxLineLength - continuation.length;
+
+        if (content.length <= firstLineMaxLength) {
+            return prefix + content;
+        }
+
+        const lines = [];
+        let currentLine = '';
+        const parts = content.split('|');
+        let isFirstLine = true;
+
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i] + (i < parts.length - 1 ? '|' : '');
+            const availableLength = isFirstLine ? firstLineMaxLength : continuationMaxLength;
+
+            if (currentLine.length + part.length <= availableLength) {
+                currentLine += part;
+            } else {
+                if (currentLine) {
+                    // Salva la riga corrente
+                    const linePrefix = isFirstLine ? prefix : continuation;
+                    lines.push(linePrefix + currentLine);
+                    currentLine = part;
+                    isFirstLine = false;
+                } else {
+                    // Se anche un singolo elemento è troppo lungo, lo tronchiamo
+                    const linePrefix = isFirstLine ? prefix : continuation;
+                    const maxPartLength = availableLength - 3; // -3 per '...'
+                    lines.push(linePrefix + part.substring(0, maxPartLength) + '...');
+                    currentLine = '';
+                    isFirstLine = false;
+                }
+            }
+        }
+
+        if (currentLine) {
+            const linePrefix = isFirstLine ? prefix : continuation;
+            lines.push(linePrefix + currentLine);
+        }
+
+        return lines.join('\n');
+    }
+
+    // Costruisce il diagramma
+    const scopesWrapped = wrapWithAscii(scopesList, '', '  │                          ');
+    const typesWrapped = wrapWithAscii(typesList, '', '                     ');
+
+    const diagram = `<type>(<scope>): <short summary>
+  │       │             │
+  │       │             └─⫸ Summary in present tense. Not capitalized. No period at the end.
+  │       │
+  │       └─⫸ Commit Scope: ${scopesWrapped}
+  │
+  └─⫸ Commit Type: ${typesWrapped}`;
+
+    return new Handlebars.SafeString(diagram);
+});
+
+
+// Helper semplificato per liste inline
+Handlebars.registerHelper('wrapList', function(items, options) {
+    if (!items || items.length === 0) {
+        return '';
+    }
+
+    const maxLineLength = 90;
+    const prefix = '  ';
+    let result = '';
+    let currentLine = prefix;
+
+    for (let i = 0; i < items.length; i++) {
+        const item = `\`${items[i]}\``;
+        const separator = i < items.length - 1 ? ', ' : '';
+        const itemWithSeparator = item + separator;
+
+        if (currentLine.length + itemWithSeparator.length <= maxLineLength) {
+            currentLine += itemWithSeparator;
+        } else {
+            result += currentLine + '\n';
+            currentLine = prefix + itemWithSeparator;
+        }
+    }
+
+    if (currentLine.length > prefix.length) {
+        result += currentLine;
+    }
+
+    return new Handlebars.SafeString(result);
+});
+
+
 
 function extractTypesData(config) {
     const types = config?.rules?.['type-enum']?.[2] || Object.keys(typeDescriptions);
 
     return types.map(type => ({
         type: type,
-        description: typeDescriptions[type] || 'Custom type'
+        description: typeDescriptions[type] || ''
     }));
 }
 
@@ -38,7 +126,7 @@ function extractScopesData(config) {
     return {
         hasScopes: scopes && scopes.length > 0,
         required: scopeRequired,
-        list: scopes || []
+        list: (scopes || []).map(scope => ({scope: scope, description: scopeDescriptions[scope] || ''}))
     };
 }
 
@@ -210,148 +298,6 @@ function writeCommitHelp(config) {
     const result = template(templateData);
 
     writeFileSync('/workdir/commit-message-guidelines.md', result,'utf8');
-}
-
-function showCommitHelp(config) {
-
-
-    console.log('\n📝 REQUIRED COMMIT FORMAT (https://github.com/angular/angular/blob/main/contributing-docs/commit-message-guidelines.md):');
-    console.log('<header>\n' +
-        '<BLANK LINE>\n' +
-        '<body?>\n' +
-        '<BLANK LINE>\n' +
-        '<footer?>');
-
-    console.log('HEADER');
-    console.log('<type>(<scope>): <short summary>');
-
-
-    // Extract types from configuration
-    const types = config?.rules?.['type-enum']?.[2] || [
-        'feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'ci', 'build', 'revert'
-    ];
-
-    console.log('');
-    console.log('✅ Allowed types:' + types.join(', '));
-
-    // Extract scopes from configuration
-    const scopes = config?.rules?.['scope-enum']?.[2];
-    if (scopes && scopes.length > 0) {
-        console.log('🎯 Allowed scopes:' + scopes.join(', '));
-        console.log('');
-    }
-
-    // Check if scope is required
-    const scopeRequired = config?.rules?.['scope-empty']?.[1] === 'never';
-    if (scopeRequired) {
-        console.log('⚠️  Scope is REQUIRED for this project');
-        console.log('');
-    }
-
-    // ADDITIONAL MANDATORY CONFIGURATIONS
-    console.log('📏 MANDATORY LENGTHS:');
-
-    // Header length
-    const headerMaxLength = config?.rules?.['header-max-length']?.[2];
-    const headerMinLength = config?.rules?.['header-min-length']?.[2];
-    if (headerMaxLength || headerMinLength) {
-        console.log(`   • Header: ${headerMinLength || 'min not specified'} - ${headerMaxLength || 'max not specified'} characters`);
-    }
-
-    // Subject length
-    const subjectMaxLength = config?.rules?.['subject-max-length']?.[2];
-    const subjectMinLength = config?.rules?.['subject-min-length']?.[2];
-    if (subjectMaxLength || subjectMinLength) {
-        console.log(`   • Description: ${subjectMinLength || 'min not specified'} - ${subjectMaxLength || 'max not specified'} characters`);
-    }
-
-    // Scope length
-    const scopeMaxLength = config?.rules?.['scope-max-length']?.[2];
-    if (scopeMaxLength) {
-        console.log(`   • Scope: maximum ${scopeMaxLength} characters`);
-    }
-
-    // Body line length
-    const bodyMaxLineLength = config?.rules?.['body-max-line-length']?.[2];
-    if (bodyMaxLineLength) {
-        console.log(`   • Body lines: maximum ${bodyMaxLineLength} characters`);
-    }
-
-    // Footer line length
-    const footerMaxLineLength = config?.rules?.['footer-max-line-length']?.[2];
-    if (footerMaxLineLength) {
-        console.log(`   • Footer lines: maximum ${footerMaxLineLength} characters`);
-    }
-    console.log('');
-
-    // MANDATORY FORMATTING RULES
-    console.log('📝 MANDATORY FORMATTING RULES:');
-
-    // Type case
-    const typeCase = config?.rules?.['type-case']?.[2];
-    if (typeCase) {
-        console.log(`   • Type: must be in ${typeCase === 'lower-case' ? 'lowercase' : typeCase}`);
-    }
-
-    // Subject case
-    const subjectCase = config?.rules?.['subject-case']?.[2];
-    if (subjectCase) {
-        console.log(`   • Description: must be in ${subjectCase === 'sentence-case' ? 'sentence case' : subjectCase}`);
-    }
-
-    // Scope case
-    const scopeCase = config?.rules?.['scope-case']?.[2];
-    if (scopeCase) {
-        console.log(`   • Scope: must be in ${scopeCase === 'lower-case' ? 'lowercase' : scopeCase}`);
-    }
-
-    // Body case
-    const bodyCase = config?.rules?.['body-case']?.[2];
-    if (bodyCase) {
-        console.log(`   • Body: must be in ${bodyCase === 'sentence-case' ? 'sentence case' : bodyCase}`);
-    }
-
-    // Full stop rules
-    const headerFullStop = config?.rules?.['header-full-stop']?.[1] === 'never';
-    const subjectFullStop = config?.rules?.['subject-full-stop']?.[1] === 'never';
-    if (headerFullStop || subjectFullStop) {
-        console.log('   • DO NOT end header/description with a period');
-    }
-    console.log('');
-
-    // MANDATORY STRUCTURAL RULES
-    console.log('🏗️  MANDATORY STRUCTURAL RULES:');
-
-    // Body leading blank
-    const bodyLeadingBlank = config?.rules?.['body-leading-blank']?.[1] === 'always';
-    if (bodyLeadingBlank) {
-        console.log('   • Blank line required before commit body');
-    }
-
-    // Footer leading blank
-    const footerLeadingBlank = config?.rules?.['footer-leading-blank']?.[1] === 'always';
-    if (footerLeadingBlank) {
-        console.log('   • Blank line required before footer');
-    }
-
-    // References required
-    const referencesRequired = config?.rules?.['references-empty']?.[1] === 'never';
-    if (referencesRequired) {
-        console.log('   • References required (e.g.: issue #123, ticket ABC-456)');
-    }
-
-    // Type required
-    const typeRequired = config?.rules?.['type-empty']?.[1] === 'never';
-    if (typeRequired) {
-        console.log('   • Type required');
-    }
-
-    // Subject required
-    const subjectRequired = config?.rules?.['subject-empty']?.[1] === 'never';
-    if (subjectRequired) {
-        console.log('   • Description required');
-    }
-    console.log('');
 }
 
 // Main

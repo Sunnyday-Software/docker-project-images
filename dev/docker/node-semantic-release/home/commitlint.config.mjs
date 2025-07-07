@@ -74,6 +74,7 @@ const defaultConfig = {
             'auth',
             'database',
             'config',
+            'security',
             'localization'
         ]],
 
@@ -110,21 +111,48 @@ const projectConventions = await loadProjectConventions();
 // Intelligent merge of configurations
 const finalConfig = {
     ...defaultConfig,
-    ...projectConventions,
+    ...projectConventions.commitlint,
     rules: {
         ...defaultConfig.rules,
-        ...projectConventions.rules
+        ...projectConventions?.commitlint?.rules
     }
 };
 
 // If the project specifies scopes, add them to the configuration
-if (projectConventions.scopes && Array.isArray(projectConventions.scopes)) {
-    finalConfig.rules['scope-enum'] = [2, 'always', projectConventions.scopes];
+if (projectConventions?.commitlint?.scopes && Array.isArray(projectConventions?.commitlint?.scopes)) {
+    finalConfig.rules['scope-enum'] = [2, 'always', projectConventions?.commitlint?.scopes];
 }
 
 // If the project specifies custom types, replace them
-if (projectConventions.types && Array.isArray(projectConventions.types)) {
-    finalConfig.rules['type-enum'] = [2, 'always', projectConventions.types];
+if (projectConventions?.commitlint?.types && Array.isArray(projectConventions?.commitlint?.types)) {
+    finalConfig.rules['type-enum'] = [2, 'always', projectConventions?.commitlint?.types];
 }
 
 export default finalConfig;
+
+export const typeDescriptions = {
+    ...(projectConventions?.typeDescriptions ?? {
+        'build': 'Changes that affect the build system or external dependencies',
+        'ci': 'Changes to our CI configuration files and scripts',
+        'docs': 'Documentation only changes',
+        'feat': 'A new feature',
+        'fix': 'A bug fix',
+        'perf': 'A code change that improves performance',
+        'refactor': 'A code change that neither fixes a bug nor adds a feature',
+        'test': 'Adding missing tests or correcting existing tests',
+        'style': 'Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)'
+    })
+}
+
+export const scopeDescriptions = {
+    ...(projectConventions?.scopeDescriptions ?? {
+        'core': 'Core module',
+        'api': 'API module',
+        'ui': 'UI module',
+        'auth': 'Authentication module',
+        'database': 'Database module',
+        'config': 'Configuration module',
+        'security': 'Security module',
+        'localization': 'Localization module'
+    })
+}
