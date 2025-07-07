@@ -62,7 +62,7 @@ Handlebars.registerHelper('asciiDiagram', function(types, scopes, options) {
     }
 
     // Costruisce il diagramma
-    const scopesWrapped = wrapWithAscii(scopesList, '', '  │                          ');
+    const scopesWrapped = wrapWithAscii(scopesList.map(s => s.scope), '', '  │                          ');
     const typesWrapped = wrapWithAscii(typesList, '', '                     ');
 
     const diagram = `<type>(<scope>): <short summary>
