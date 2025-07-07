@@ -38,11 +38,7 @@ set -e
 # Prevent core dumps
 ulimit -c 0
 
-
-
-echo "Loading BASH Scripts"
 . ~/.bashrc.d/docker_entrypoint_common.sh
 
-echo "Running ${@}"
 docker_entrypoint_common "$@"
 

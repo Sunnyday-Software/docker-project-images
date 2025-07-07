@@ -37,7 +37,7 @@ handle_commitlint_input() {
     # Altrimenti, tratta come messaggio di commit testuale
     echo "🔍 Validando messaggio di commit: \"$input\""
     #echo "$input" | commitlint --config "$CONFIG_FILE"
-    echo "$input" | npm run --prefix "$HOME" commitlint:stdin -- --config "$CONFIG_FILE"
+    echo "$input" | npm run --silent --prefix "$HOME" commitlint:stdin -- --config "$CONFIG_FILE"
     return $?
 }
 
@@ -64,7 +64,7 @@ if [ $exit_code -ne 0 ]; then
     echo ""
     echo ""
     echo ""
-    npm run  --prefix "$HOME" commit-help
+    npm run --silent --prefix "$HOME" commit-help
 fi
 
 

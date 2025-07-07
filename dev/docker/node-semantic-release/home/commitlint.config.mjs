@@ -73,7 +73,8 @@ const defaultConfig = {
             'ui',
             'auth',
             'database',
-            'config'
+            'config',
+            'localization'
         ]],
 
 
@@ -85,9 +86,22 @@ const defaultConfig = {
     },
     parserPreset: {
         parserOpts: {
-            issuePrefixes: ['#']
+            referenceActions: [
+                'close',
+                'closes',
+                'closed',
+                'fix',
+                'fixes',
+                'fixed',
+                'resolve',
+                'resolves',
+                'resolved'
+            ],
+            issuePrefixes: ['#'],
+            noteKeywords: ['BREAKING CHANGE', 'BREAKING-CHANGE'],
         }
     },
+    helpUrl: "file://./commit-message-guidelines.md"
 };
 
 // Load project conventions and merge with default configuration
