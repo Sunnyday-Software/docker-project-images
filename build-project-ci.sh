@@ -53,12 +53,33 @@ EOF
 if [ -n "$(git status --porcelain dev/docker/versions.properties)" ]; then
     echo "=== Rilevati cambiamenti in versions.properties ==="
 
+    # Verifica se siamo in ambiente CI
+    if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
+        # Configura Git per CI
+        if [ -z "$(git config user.email)" ]; then
+            git config user.email "${GITHUB_ACTOR:-github-actions}@users.noreply.github.com"
+        fi
+        if [ -z "$(git config user.name)" ]; then
+            git config user.name "${GITHUB_ACTOR:-GitHub Actions}"
+        fi
+
+        echo "📧 Git configurato con email: $(git config user.email)"
+        echo "👤 Git configurato con nome: $(git config user.name)"
+    fi
+
     # Commit e push dei cambiamenti
     git add dev/docker/versions.properties
     git commit -m "chore: update Docker image versions [ci skip]"
-    git push origin HEAD
 
+    # Verifica se abbiamo permessi di push
+    if git push origin HEAD; then
+        echo "✅ Push completato con successo"
+    else
+        echo "❌ Errore durante il push"
+        exit 1
+    fi
 fi
+
 
 
 # Fase 2: Build e Push delle immagini
