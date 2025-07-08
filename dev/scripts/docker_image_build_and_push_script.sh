@@ -184,6 +184,7 @@ build_single_image() {
             image_available=true
         else
             log "⚠️  Pull fallito, procedo con il build"
+            try_pull_image "${full_image_name}:latest"
             image_available=false
         fi
     fi
