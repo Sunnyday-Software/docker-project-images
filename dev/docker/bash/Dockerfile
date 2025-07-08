@@ -31,6 +31,7 @@ RUN apt-get update -y; \
     locales \
     jq \
     bash \
+    gettext \
     openssl \
     openssh-client \
     sshpass \

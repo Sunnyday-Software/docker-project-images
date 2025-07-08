@@ -15,6 +15,7 @@ RUN apt-get update -y; \
     ca-certificates \
     pkg-config \
     cmake \
+    gettext \
     git \
     wget \
     dumb-init \

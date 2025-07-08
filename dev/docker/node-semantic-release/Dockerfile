@@ -16,10 +16,6 @@ RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 # Install Node.js
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
-    apt-utils \
-    ca-certificates \
-    curl \
-    gnupg \
     build-essential \
     git
 
