@@ -1,12 +1,14 @@
 FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG IMAGE_FULL_NAME
 
 ENV TZ=UTC
 ENV LANG=en_US.utf8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
+RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 RUN apt-get update -y; \
     apt-get install -y --no-install-recommends \
@@ -45,6 +47,7 @@ RUN curl -fsSL https://get.docker.com -o ./install-docker.sh; \
 WORKDIR /workdir
 
 COPY docker-entrypoint.sh /usr/local/bin/
+COPY git-credential-gpg.sh /usr/local/bin/
 RUN dos2unix /usr/local/bin/*.sh ; \
     chmod +x /usr/local/bin/*.sh;
 
