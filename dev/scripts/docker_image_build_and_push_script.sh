@@ -82,16 +82,17 @@ log "------------------------------"
 
 # Costruisci la lista delle piattaforme basata sui flag
 ENABLED_PLATFORMS=()
-if [ "$AMD64_PLATFORM" = true ]; then
-    ENABLED_PLATFORMS+=("amd64")
-fi
 if [ "$ARM64_PLATFORM" = true ]; then
     ENABLED_PLATFORMS+=("arm64")
 fi
+if [ "$AMD64_PLATFORM" = true ]; then
+    ENABLED_PLATFORMS+=("amd64")
+fi
+
 
 # Se nessuna piattaforma è abilitata, usa il default
 if [ ${#ENABLED_PLATFORMS[@]} -eq 0 ]; then
-    ENABLED_PLATFORMS=("amd64" "arm64")
+    ENABLED_PLATFORMS=("arm64" "amd64")
 fi
 
 # Costruisci la stringa PLATFORMS

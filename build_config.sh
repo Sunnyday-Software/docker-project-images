@@ -10,7 +10,7 @@
 
 declare -A IMAGE_BASH=(
     [name]="bash"
-    [platforms]="amd64,arm64"
+    [platforms]="arm64,amd64"
     [dockerfile]="dev/docker/bash/Dockerfile"
     [context]="dev/docker/bash"
     [build_args]=""
@@ -19,7 +19,7 @@ declare -A IMAGE_BASH=(
 
 declare -A IMAGE_MAKE=(
     [name]="make"
-    [platforms]="amd64,arm64"
+    [platforms]="arm64,amd64"
     [dockerfile]="dev/docker/make/Dockerfile"
     [context]="dev/docker/make"
     [depends_on]="bash"
@@ -29,7 +29,7 @@ declare -A IMAGE_MAKE=(
 
 declare -A IMAGE_OPENTOFU=(
     [name]="opentofu"
-    [platforms]="amd64,arm64"
+    [platforms]="arm64,amd64"
     [dockerfile]="dev/docker/opentofu/Dockerfile"
     [context]="dev/docker/opentofu"
     [depends_on]="bash"
@@ -39,7 +39,7 @@ declare -A IMAGE_OPENTOFU=(
 
 declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [name]="node-semantic-release"
-    [platforms]="amd64,arm64"
+    [platforms]="arm64,amd64"
     [dockerfile]="dev/docker/node-semantic-release/Dockerfile"
     [context]="dev/docker/node-semantic-release"
     [depends_on]="bash"

@@ -7,6 +7,7 @@ ENV TZ=UTC
 ENV LANG=en_US.utf8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
+ENV HOME_DIR=/root
 
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
@@ -45,6 +46,21 @@ RUN curl -fsSL https://get.docker.com -o ./install-docker.sh; \
 
 
 WORKDIR /workdir
+
+
+# Create the .bashrc.d directory for the user (root by default in Docker)
+RUN mkdir -p $HOME_DIR/.bashrc.d
+
+# Copy all .sh files from .bashrc.d to the .bashrc.d directory
+COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
+
+# Create a script that sources the .bashrc.d directory
+RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
+
+# Make sure all scripts are executable
+RUN dos2unix $HOME_DIR/*.sh ; \
+    chmod -R +x $HOME_DIR/*.sh; \
+    chown $USER:$GROUP -R $HOME_DIR/.bashrc.d
 
 COPY docker-entrypoint.sh /usr/local/bin/
 COPY git-credential-gpg.sh /usr/local/bin/
