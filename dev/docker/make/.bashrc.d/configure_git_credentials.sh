@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-CHECK_FILE="${HOME}/.runtime/git-credential-test.gpg"
+CHECK_FILE=".runtime/git-credential-test.gpg"
 GPG_KEY="${GPG_KEY:-default@example.com}"
 
 # Function: Initial setup
