@@ -1,7 +1,7 @@
 FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG IMAGE_FULL_NAME
+ARG IMAGE_FULL_NAME="noname"
 
 ENV TZ=UTC
 ENV LANG=en_US.utf8
@@ -11,8 +11,9 @@ ENV HOME_DIR=/root
 
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
-RUN apt-get update -y; \
-    apt-get install -y --no-install-recommends \
+RUN set -x \
+    && apt-get update -y \
+    && apt-get install -y --no-install-recommends \
     apt-utils \
     build-essential \
     ca-certificates \
@@ -35,15 +36,19 @@ RUN apt-get update -y; \
     screen \
     tree \
     make \
-    ; \
-    rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && apt-get purge -y --auto-remove \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
-RUN curl -fsSL https://get.docker.com -o ./install-docker.sh; \
-    chmod +x ./install-docker.sh; \
-    ./install-docker.sh
-
+RUN set -x \
+    && curl -fsSL https://get.docker.com -o ./install-docker.sh \
+    && chmod +x ./install-docker.sh \
+    && ./install-docker.sh \
+    && apt-get clean \
+    && apt-get purge -y --auto-remove \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workdir
 

@@ -2,16 +2,19 @@
 FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG IMAGE_FULL_NAME
+ARG IMAGE_FULL_NAME="noname"
 
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV USER=bashuser
 ENV GROUP=bashuser
 ENV TZ=UTC
-ENV LANG=en_US.utf8
+ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 ENV HOME_DIR=/home/$USER
 
+LABEL \
+    org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
 
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
@@ -21,8 +24,9 @@ RUN set -eux; \
     useradd -r -g $GROUP --uid=999 --home-dir=$HOME_DIR --shell=/bin/bash $USER; \
     install --verbose --directory --owner $USER --group $GROUP --mode 1777 $HOME_DIR
 
-RUN apt-get update -y; \
-    apt-get install -y --no-install-recommends \
+RUN set -x \
+    && apt-get update -y \
+    && apt-get install -y --no-install-recommends \
     apt-utils \
     ca-certificates \
     dumb-init \
@@ -43,28 +47,21 @@ RUN apt-get update -y; \
     screen \
     tmux \
     unzip \
-    python3 \
-    python3-pip \
-    python3-venv \
-    python3-setuptools \
-    pipx \
-    ;
+    && apt-get clean \
+    && apt-get purge -y --auto-remove \
+    && rm -rf /var/lib/apt/lists/*
+
 
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
-# Imposta PIPX e installa librerie globalmente per tutti (con --global)
-ENV PIPX_HOME=/opt/pipx
-ENV PIPX_BIN_DIR=/usr/local/bin
-
 
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN dos2unix /usr/local/bin/*.sh ; \
-    chmod +x /usr/local/bin/*.sh;
+RUN set -x \
+    && find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-# Set the working directory
-WORKDIR /workdir
+
 
 # Create the .bashrc.d directory for the user (root by default in Docker)
 RUN mkdir -p $HOME_DIR/.bashrc.d
@@ -76,9 +73,9 @@ COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
 
 # Make sure all scripts are executable
-RUN dos2unix $HOME_DIR/*.sh ; \
-    chmod -R +x $HOME_DIR/*.sh; \
-    chown $USER:$GROUP -R $HOME_DIR/.bashrc.d
+RUN set -x \
+    && find $HOME_DIR -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \; \
+    && chown $USER:$GROUP -R $HOME_DIR/.bashrc.d
 
 VOLUME ["/home/bashuser/.ssh"]
 USER $USER
@@ -86,6 +83,9 @@ USER $USER
 ENV PATH="$HOME_DIR/.local/bin:${PATH}"
 
 USER bashuser
+
+# Set the working directory
+WORKDIR /workdir
 
 # Imposta l'entrypoint per eseguire lo script passato come parametro
 CMD ["echo", "Nessuno script specificato."]

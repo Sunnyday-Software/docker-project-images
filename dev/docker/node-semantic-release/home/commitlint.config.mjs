@@ -1,4 +1,4 @@
-import { existsSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -7,20 +7,50 @@ const __dirname = dirname(__filename);
 
 // Function to load project-specific configurations
 async function loadProjectConventions() {
-    const conventionsPath = '/workdir/conventions/commits/commitlint-config-conventional.js';
+    const conventionsDir = '/workdir/conventions/commits';
 
-    if (existsSync(conventionsPath)) {
-        try {
-            // Dynamically import project configuration
-            const projectConventions = await import(conventionsPath);
-            return projectConventions.default || projectConventions;
-        } catch (error) {
-            console.warn(`⚠️  No project conventions from ${conventionsPath}:`, error.message);
-            return {};
-        }
+    if (!existsSync(conventionsDir)) {
+        return {};
     }
 
-    return {};
+    try {
+        // Read all files in the directory, filter JS files, sort alphabetically
+        const files = readdirSync(conventionsDir)
+            .filter(f => f.toLowerCase().endsWith('.js'))
+            .sort((a, b) => a.localeCompare(b));
+
+        if (files.length === 0) {
+            return {};
+        }
+
+        // Import each file in strict alphabetical order and merge their exports
+        let merged = {};
+        const deepMerge = (target, source) => {
+            const out = { ...target };
+            for (const [k, v] of Object.entries(source || {})) {
+                if (v && typeof v === 'object' && !Array.isArray(v)) {
+                    out[k] = deepMerge(out[k] || {}, v);
+                } else {
+                    out[k] = v;
+                }
+            }
+            return out;
+        };
+        for (const file of files) {
+            const fullPath = join(conventionsDir, file);
+            try {
+                const mod = await import(fullPath);
+                const cfg = mod?.default ?? mod ?? {};
+                merged = deepMerge(merged, cfg);
+            } catch (e) {
+                console.warn(`⚠️  Unable to load project conventions from ${fullPath}: ${e.message}`);
+            }
+        }
+        return merged;
+    } catch (error) {
+        console.warn(`⚠️  Error reading conventions directory ${conventionsDir}: ${error.message}`);
+        return {};
+    }
 }
 
 // Default configuration
