@@ -64,14 +64,15 @@ COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
 
 # Make sure all scripts are executable
-RUN dos2unix $HOME_DIR/*.sh ; \
-    chmod -R +x $HOME_DIR/*.sh; \
-    chown $USER:$GROUP -R $HOME_DIR/.bashrc.d
+RUN set -x \
+    && find $HOME_DIR -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \; -exec chown $USER:$GROUP {} \;
+
 
 COPY docker-entrypoint.sh /usr/local/bin/
 COPY git-credential-gpg.sh /usr/local/bin/
-RUN dos2unix /usr/local/bin/*.sh ; \
-    chmod +x /usr/local/bin/*.sh;
+
+RUN set -x \
+    && find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 
