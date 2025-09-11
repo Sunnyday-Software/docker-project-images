@@ -11,7 +11,7 @@ build_image() {
   docker build \
     --platform $PLATFORM \
     --build-arg PLATFORM_TAG="$PLATFORM_TAG" \
-    --build-arg IMAGE_FULL_NAME="${image_name}:localdev"  \
+    --build-arg IMAGE_FULL_NAME="sunnydaysoftware/${image_name}:localdev"  \
     --build-arg BASE_IMAGE="${base_image_name}" \
     -t $image_name:localdev \
     "$image_base_path/$image_name"
@@ -19,5 +19,5 @@ build_image() {
 }
 
 #build_image "dev/docker" "bash"
-#build_image "dev/docker" "make"
-build_image "dev/docker" "node-semantic-release" "bash:localdev"
+build_image "dev/docker" "make"
+#build_image "dev/docker" "node-semantic-release" "bash:localdev"

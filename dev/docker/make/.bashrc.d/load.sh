@@ -22,17 +22,13 @@ else
     echo "ℹ️  .bashrc.d scripts already loaded"
 fi
 
-# Stampa informazioni sull'ambiente
+# Informazioni minime (no variabili d'ambiente per evitare leak di segreti)
 echo "------- INFORMATION --------"
-echo "Informazioni sull'ambiente: "
 echo "Image: ${IMAGE_FULL_NAME}"
-echo "----------------------------"
-echo "Nome utente corrente: $(whoami), $(id -u)/$(id -g)"
-echo "Data e ora attuali: $(date)"
-echo "Versione di Bash: $BASH_VERSION"
-echo "Directory corrente: $(pwd)"
-echo "Hostname della macchina: $(hostname)"
-echo "Sistema operativo: $(uname -a)"
-echo "Variabili d'ambiente:"
-env
+echo "User: $(whoami) ($(id -u)/$(id -g))"
+echo "Time: $(date)"
+echo "Bash: $BASH_VERSION"
+echo "CWD: $(pwd)"
+echo "Host: $(hostname)"
+echo "OS: $(uname -srm)"
 echo "----------------------------"

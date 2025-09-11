@@ -33,6 +33,7 @@ RUN set -x \
     dos2unix \
     curl \
     gnupg \
+    openssh-client \
     screen \
     tree \
     make \
