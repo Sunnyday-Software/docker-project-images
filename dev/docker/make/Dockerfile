@@ -65,7 +65,7 @@ RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HO
 
 # Make sure all scripts are executable
 RUN set -x \
-    && find $HOME_DIR -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \; -exec chown $USER:$GROUP {} \;
+    && find $HOME_DIR/.bashrc.d -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
 
 
 COPY docker-entrypoint.sh /usr/local/bin/

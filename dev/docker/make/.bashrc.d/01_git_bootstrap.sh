@@ -26,8 +26,7 @@ CI=${CI:-false}
 case "$GIT_AUTH_MODE" in
   https|ssh) ;;
   *) warn "GIT_AUTH_MODE '$GIT_AUTH_MODE' not recognized. Defaulting to 'https'."; GIT_AUTH_MODE=https ;;
-fi
-
+esac
 # Always disable GPG signing unless explicitly enabled
 if [[ "$GIT_SIGN_COMMITS" != "true" ]]; then
   git config --global commit.gpgsign false || true
@@ -55,8 +54,14 @@ setup_https() {
   host=${GIT_HTTP_HOST}
 
   if [[ -z "$user" || -z "$token" ]]; then
-    err "HTTPS mode requires GIT_HTTP_USER and GIT_HTTP_TOKEN to be set."; return 1
+    if [[ "${CI:-false}" == "true" ]]; then
+      err "HTTPS mode requires GIT_HTTP_USER and GIT_HTTP_TOKEN to be set."; return 1
+    else
+      warn "HTTPS selected but GIT_HTTP_USER/GIT_HTTP_TOKEN not set; skipping Git credential setup (non-CI). Consider GIT_AUTH_MODE=ssh."
+      return 0
+    fi
   fi
+
 
   mkdir -p "$(dirname "$GIT_CREDENTIALS_STORE_PATH")"
   chmod 700 "$(dirname "$GIT_CREDENTIALS_STORE_PATH")" || true

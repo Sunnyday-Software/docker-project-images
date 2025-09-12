@@ -8,7 +8,7 @@ build_image() {
   local image_name="$2"
   local base_image_name="$3"
 
-  docker build \
+  docker build --no-cache --pull \
     --platform $PLATFORM \
     --build-arg PLATFORM_TAG="$PLATFORM_TAG" \
     --build-arg IMAGE_FULL_NAME="sunnydaysoftware/${image_name}:localdev"  \
