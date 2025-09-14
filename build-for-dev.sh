@@ -1,5 +1,6 @@
 # (opzionale) abilita BuildKit per build più veloce
 export DOCKER_BUILDKIT=1
+export DOCKERHUB_USERNAME=sunnydaysoftware
 export PLATFORM="linux/arm64"
 export PLATFORM_TAG="arm64"
 
@@ -19,5 +20,6 @@ build_image() {
 }
 
 #build_image "dev/docker" "bash"
-build_image "dev/docker" "make"
+#build_image "dev/docker" "make"
+build_image "dev/docker" "cdk8s"
 #build_image "dev/docker" "node-semantic-release" "bash:localdev"
