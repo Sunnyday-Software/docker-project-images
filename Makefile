@@ -17,7 +17,9 @@ endif
 .PHONY: always build-images
 
 build-images: ## costruisce le immagini docker
-	@[ -f dev/scripts/docker_image_verification.sh ] && ./dev/scripts/docker_image_verification.sh
+	@if [ -f dev/scripts/docker_image_verification.sh ]; then \
+  		./dev/scripts/docker_image_verification.sh; \
+  	fi
 
 always: build-images
 

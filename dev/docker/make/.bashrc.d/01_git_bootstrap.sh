@@ -5,8 +5,6 @@
 
 set -euo pipefail
 
-echo "Running 01_git_bootstrap.sh"
-
 log() { echo "[git-bootstrap] $*" >&2; }
 warn() { echo "[git-bootstrap][WARN] $*" >&2; }
 err() { echo "[git-bootstrap][ERROR] $*" >&2; }
@@ -125,8 +123,8 @@ ci_adjustments() {
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local remote_url
     remote_url=$(git remote get-url origin 2>/dev/null || true)
-    if [[ -n "$remote_url" ]]; then
-      if [[ "$remote_url" =~ ^git@github.com:(.+)\.git$ ]]; then
+    if [[ -n "${remote_url}" ]]; then
+      if [[ "${remote_url}" =~ ^git@github.com:(.+)\.git$ ]]; then
         local repo_path
         repo_path=${BASH_REMATCH[1]}
         local https_url="https://github.com/${repo_path}.git"

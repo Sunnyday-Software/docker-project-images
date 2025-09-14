@@ -3,6 +3,9 @@ FROM ubuntu:noble
 ARG DEBIAN_FRONTEND=noninteractive
 ARG IMAGE_FULL_NAME="noname"
 
+# Usa Bash invece di sh per tutti i RUN
+SHELL ["/bin/bash", "-c"]
+
 ENV TZ=UTC
 ENV LANG=en_US.utf8
 ENV LANGUAGE=en_US:en
@@ -76,7 +79,6 @@ RUN set -eux; \
 
 
 COPY docker-entrypoint.sh /usr/local/bin/
-COPY git-credential-gpg.sh /usr/local/bin/
 
 RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
 

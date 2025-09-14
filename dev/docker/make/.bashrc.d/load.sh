@@ -17,6 +17,8 @@ if [ "${__BASHRC_LOADED:-}" != "true" ]; then
           continue
       fi
 
+      echo "🔄 Processing file: $file"
+
       # Normalizza CRLF -> LF per evitare syntax error in bash
       if command -v dos2unix >/dev/null 2>&1; then
           echo "normalizing file: $file"
@@ -26,9 +28,22 @@ if [ "${__BASHRC_LOADED:-}" != "true" ]; then
       fi
       chmod +x "$file" 2>/dev/null || true
 
-      [ -f "$file" ] && . "$file"
-  done
+      if [ -f "$file" ]; then
+          echo "🚀 Sourcing: $file"
 
+          # Disabilita temporaneamente set -e per questo script specifico
+          set +e
+          source "$file"
+          local_exit_code=$?
+          set -e
+          if [ $local_exit_code -ne 0 ]; then
+              echo "⚠️  Warning: $file exited with code $local_exit_code, but continuing..."
+          else
+              echo "✅ Successfully sourced: $file"
+          fi
+
+      fi
+  done
 
   echo "✅ All .bashrc.d scripts loaded successfully"
 else
