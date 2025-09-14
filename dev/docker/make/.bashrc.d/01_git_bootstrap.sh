@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+echo "Running 01_git_bootstrap.sh"
+
 log() { echo "[git-bootstrap] $*" >&2; }
 warn() { echo "[git-bootstrap][WARN] $*" >&2; }
 err() { echo "[git-bootstrap][ERROR] $*" >&2; }

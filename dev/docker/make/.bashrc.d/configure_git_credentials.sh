@@ -4,6 +4,8 @@
 # It ensures we never prompt interactively.
 set -euo pipefail
 
+echo "Running configure_git_credentials.sh"
+
 # Explicitly disable any previously set custom credential helper that may prompt
 if git config --global --get credential.helper >/dev/null 2>&1; then
   helper=$(git config --global --get credential.helper || true)

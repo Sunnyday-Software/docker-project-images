@@ -63,17 +63,23 @@ COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
 
-# Make sure all scripts are executable
-RUN set -x \
-    && find $HOME_DIR/.bashrc.d -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
+# Make sure all scripts are executable (forza conversione + fallback sed e verifica)
+RUN set -eux; \
+    echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
+    find "$HOME_DIR/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
+    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then \
+      echo "CRLF still present, applying sed fallback"; \
+      while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
+    fi; \
+    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
 
 
 COPY docker-entrypoint.sh /usr/local/bin/
 COPY git-credential-gpg.sh /usr/local/bin/
 
-RUN set -x \
-    && find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
+RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/dumb-init","--","/usr/local/bin/docker-entrypoint.sh"]
 
-CMD ["echo 'Nessuno comando specificato.'"]
+CMD ["bash","-lc","echo Nessuno comando specificato."]

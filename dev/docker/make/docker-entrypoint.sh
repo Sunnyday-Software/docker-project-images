@@ -1,7 +1,8 @@
-#!/usr/bin/dumb-init /usr/bin/bash
+#!/usr/bin/env bash
 
 # https://github.com/Yelp/dumb-init
 
+echo "Running docker-entrypoint.sh"
 
 # Error handling trap
 error_handler() {
