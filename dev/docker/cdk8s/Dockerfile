@@ -44,7 +44,7 @@ USER bashuser
 WORKDIR /workdir
 
 # Helpful defaults
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${PLATFORM_TAG}
 ENV MAVEN_CONFIG=/home/bashuser/.m2
 ENV PATH="/home/bashuser/.local/bin:${PATH}"
 
