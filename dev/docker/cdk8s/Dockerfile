@@ -44,9 +44,18 @@ USER bashuser
 WORKDIR /workdir
 
 # Helpful defaults
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${PLATFORM_TAG}
+ENV JAVA_HOME=""
 ENV MAVEN_CONFIG=/home/bashuser/.m2
 ENV PATH="/home/bashuser/.local/bin:${PATH}"
+
+# Imposta JAVA_HOME al primo avvio della shell (funziona sia su amd64 che su arm64)
+SHELL ["/bin/bash", "-lc"]
+RUN set -eux; \
+    JAVA_BIN="$(command -v java)"; \
+    JAVA_HOME_DETECTED="$(readlink -f "$JAVA_BIN" | sed 's:/bin/java::')"; \
+    echo "export JAVA_HOME=\"$JAVA_HOME_DETECTED\"" >> /home/bashuser/.bashrc; \
+    echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> /home/bashuser/.bashrc
+
 
 # Default entrypoint inherited from base image
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
