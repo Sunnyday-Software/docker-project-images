@@ -54,6 +54,8 @@ RUN set -x \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*
 
+RUN git config --global --add safe.directory /workdir
+
 WORKDIR /workdir
 
 
