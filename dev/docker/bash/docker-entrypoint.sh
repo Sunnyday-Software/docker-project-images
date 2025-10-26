@@ -38,7 +38,12 @@ set -e
 # Prevent core dumps
 ulimit -c 0
 
-. ~/.bashrc.d/docker_entrypoint_common.sh
+. ~/.bashrc.d/load.sh
 
-docker_entrypoint_common "$@"
+if [ -n "${USE_TMUX}" ]; then
+  docker_entrypoint_tmux "$@"
+else
+  docker_entrypoint_common "$@"
+fi
+
 

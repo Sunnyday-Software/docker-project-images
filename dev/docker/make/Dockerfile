@@ -30,6 +30,7 @@ RUN set -x \
     tzdata \
     locales \
     jq \
+    yq \
     bash \
     openssl \
     rsync \

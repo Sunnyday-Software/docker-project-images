@@ -14,7 +14,10 @@ if [ "${__BASHRC_LOADED:-}" != "true" ]; then
       if [[ "$(realpath "$file")" == "$(realpath "${BASH_SOURCE[0]}")" ]]; then
           continue
       fi
-      [ -f "$file" ] && . "$file"
+      if [ -f "$file" ]; then
+          echo "...loading $file"
+          . "$file"
+      fi
   done
 
     echo "✅ All .bashrc.d scripts loaded successfully"

@@ -44,7 +44,9 @@ RUN set -x \
     tzdata \
     locales \
     jq \
+    yq \
     bash \
+    git \
     gettext \
     openssl \
     openssh-client \
