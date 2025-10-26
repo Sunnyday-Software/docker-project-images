@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+BASE_DIR="/workdir"
+
+
+npm run --silent --prefix "$HOME" semantic-release
+

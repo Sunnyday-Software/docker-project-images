@@ -6,25 +6,26 @@
     "commitlint:check": "commitlint --from HEAD~1 --to HEAD",
     "commitlint:edit": "commitlint --edit",
     "commitlint:stdin": "commitlint",
-    "commit-help": "node commitlint_help.mjs"
+    "commit-help": "node commitlint_help.mjs",
+    "semantic-release": "semantic-release"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
-    "@commitlint/format": "^19.8.1",
-    "@commitlint/types": "^19.8.1",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@commitlint/format": "^20.0.0",
+    "@commitlint/types": "^20.0.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^11.0.3",
-    "@semantic-release/npm": "^12.0.2",
+    "@semantic-release/github": "^12.0.0",
+    "@semantic-release/npm": "^13.1.1",
     "@semantic-release/release-notes-generator": "^14.0.3",
-    "commitlint": "^19.8.1",
+    "commitlint": "^20.1.0",
     "handlebars": "^4.7.8",
-    "semantic-release": "^24.2.6"
+    "semantic-release": "^25.0.1"
   }
 }

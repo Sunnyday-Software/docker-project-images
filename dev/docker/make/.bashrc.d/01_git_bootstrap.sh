@@ -77,7 +77,7 @@ setup_https() {
   mv "$tmp_file" "$GIT_CREDENTIALS_STORE_PATH"
   chmod 600 "$GIT_CREDENTIALS_STORE_PATH" || true
 
-  log "Configured HTTPS credentials for host '$host' with credential store file set."
+  log "Configured HTTPS credentials for host '$host' with credential store file set"
 }
 
 setup_ssh() {

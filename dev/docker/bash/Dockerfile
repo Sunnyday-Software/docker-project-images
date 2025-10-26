@@ -20,8 +20,8 @@ RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 # explicitly set user/group IDs
 RUN set -eux; \
-    groupadd -r $GROUP --gid=999; \
-    useradd -r -g $GROUP --uid=999 --home-dir=$HOME_DIR --shell=/bin/bash $USER; \
+    groupadd -r $GROUP --gid=1000; \
+    useradd -r -g $GROUP --uid=1000 --home-dir=$HOME_DIR --shell=/bin/bash $USER; \
     install --verbose --directory --owner $USER --group $GROUP --mode 1777 $HOME_DIR
 
 RUN set -x \
