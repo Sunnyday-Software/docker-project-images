@@ -40,7 +40,7 @@ ulimit -c 0
 
 . ~/.bashrc.d/load.sh
 
-if [ -n "${USE_TMUX}" ]; then
+if [ -n "${USE_TMUX:-}" ]; then
   docker_entrypoint_tmux "$@"
 else
   docker_entrypoint_common "$@"
