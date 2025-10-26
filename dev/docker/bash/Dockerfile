@@ -20,6 +20,16 @@ RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 # explicitly set user/group IDs
 RUN set -eux; \
+    if getent passwd 1000 > /dev/null; then \
+        OLD_USER=$(getent passwd 1000 | cut -d: -f1); \
+        echo "Rimozione utente esistente: $OLD_USER"; \
+        userdel -r $OLD_USER 2>/dev/null || userdel $OLD_USER; \
+    fi; \
+    if getent group 1000 > /dev/null; then \
+        OLD_GROUP=$(getent group 1000 | cut -d: -f1); \
+        echo "Rimozione gruppo esistente: $OLD_GROUP"; \
+        groupdel $OLD_GROUP; \
+    fi; \
     groupadd -r $GROUP --gid=1000; \
     useradd -r -g $GROUP --uid=1000 --home-dir=$HOME_DIR --shell=/bin/bash $USER; \
     install --verbose --directory --owner $USER --group $GROUP --mode 1777 $HOME_DIR
