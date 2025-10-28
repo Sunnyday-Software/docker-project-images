@@ -105,6 +105,12 @@ RUN set -eux; \
 
 RUN chown -R $USER:$GROUP $HOME_DIR
 
+# Crea directory template per la home (copia completa)
+RUN mkdir -p /opt/home-template && \
+    cp -a $HOME_DIR/. /opt/home-template/ && \
+    echo "✅ Home template created in /opt/home-template"
+
+
 COPY docker-entrypoint.sh /usr/local/bin/
 
 RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
