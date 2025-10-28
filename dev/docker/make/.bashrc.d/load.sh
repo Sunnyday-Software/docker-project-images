@@ -19,15 +19,6 @@ if [ "${__BASHRC_LOADED:-}" != "true" ]; then
 
       echo "🔄 Processing file: $file"
 
-      # Normalizza CRLF -> LF per evitare syntax error in bash
-      if command -v dos2unix >/dev/null 2>&1; then
-          echo "normalizing file: $file"
-          dos2unix "$file" >/dev/null 2>&1 || true
-      else
-          sed -i 's/\r$//' "$file" 2>/dev/null || true
-      fi
-      chmod +x "$file" 2>/dev/null || true
-
       if [ -f "$file" ]; then
           echo "🚀 Sourcing: $file"
 
