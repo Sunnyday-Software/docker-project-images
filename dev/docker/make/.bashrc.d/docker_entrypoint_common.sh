@@ -35,7 +35,7 @@ function docker_entrypoint_common {
       fi
 
       # Aggiungi l'utente al gruppo
-      usermod -aG $DOCKER_SOCK_GID makeuser
+      usermod -aG $DOCKER_SOCK_GID devuser
   fi
 #execute workspace setup script
   run_script_if_available "/workdir/dev/scripts/setup.sh"
