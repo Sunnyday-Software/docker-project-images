@@ -19,7 +19,7 @@ ENV HOME_DIR=/home/$USER
 LABEL \
     org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
 
-RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
+RUN echo "IMAGE_FULL_NAME=\"${IMAGE_FULL_NAME}\"" > /etc/image-info
 
 RUN set -eux; \
     if getent passwd 1000 > /dev/null; then \
