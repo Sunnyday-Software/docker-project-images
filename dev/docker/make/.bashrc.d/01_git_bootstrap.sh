@@ -16,14 +16,19 @@ fi
 export __GIT_BOOTSTRAP_DONE=true
 
 # Check GIT_CONFIG_GLOBAL environment variable and path
-if [[ -n "${GIT_CONFIG_GLOBAL:-}" ]]; then
-  if [[ ! -f "$GIT_CONFIG_GLOBAL" ]]; then
-    mkdir -p "$(dirname "$GIT_CONFIG_GLOBAL")"
-    touch "$GIT_CONFIG_GLOBAL"
-    echo "GIT_CONFIG_GLOBAL file '$GIT_CONFIG_GLOBAL' created";
-  fi
+# Default to writable location if not set
+GIT_CONFIG_GLOBAL=${GIT_CONFIG_GLOBAL:-$HOME/.gitconfig}
+export GIT_CONFIG_GLOBAL
+
+if [[ ! -f "$GIT_CONFIG_GLOBAL" ]]; then
+  mkdir -p "$(dirname "$GIT_CONFIG_GLOBAL")"
+  touch "$GIT_CONFIG_GLOBAL"
+  log "GIT_CONFIG_GLOBAL file '$GIT_CONFIG_GLOBAL' created"
 fi
 
+# Workaround per "Invalid cross-device link": imposta TMPDIR nello stesso filesystem di HOME
+export TMPDIR="${HOME}/.cache/tmp"
+mkdir -p "$TMPDIR"
 
 # Defaults
 GIT_AUTH_MODE=${GIT_AUTH_MODE:-https}
