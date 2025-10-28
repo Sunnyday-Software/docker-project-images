@@ -15,6 +15,15 @@ if [[ "${__GIT_BOOTSTRAP_DONE:-}" == "true" ]]; then
 fi
 export __GIT_BOOTSTRAP_DONE=true
 
+# Check GIT_CONFIG_GLOBAL environment variable and path
+if [[ -n "${GIT_CONFIG_GLOBAL:-}" ]]; then
+  if [[ ! -f "$GIT_CONFIG_GLOBAL" ]]; then
+    mkdir -p "$GIT_CONFIG_GLOBAL"
+    low "GIT_CONFIG_GLOBAL path '$GIT_CONFIG_GLOBAL' created";
+  fi
+fi
+
+
 # Defaults
 GIT_AUTH_MODE=${GIT_AUTH_MODE:-https}
 GIT_CREDENTIALS_STORE_PATH=${GIT_CREDENTIALS_STORE_PATH:-/workdir/.git-credentials}
