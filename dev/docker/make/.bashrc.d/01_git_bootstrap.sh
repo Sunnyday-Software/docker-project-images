@@ -19,7 +19,7 @@ export __GIT_BOOTSTRAP_DONE=true
 if [[ -n "${GIT_CONFIG_GLOBAL:-}" ]]; then
   if [[ ! -f "$GIT_CONFIG_GLOBAL" ]]; then
     mkdir -p "$GIT_CONFIG_GLOBAL"
-    low "GIT_CONFIG_GLOBAL path '$GIT_CONFIG_GLOBAL' created";
+    echo "GIT_CONFIG_GLOBAL path '$GIT_CONFIG_GLOBAL' created";
   fi
 fi
 
