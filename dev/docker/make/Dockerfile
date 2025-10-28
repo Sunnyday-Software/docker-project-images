@@ -3,6 +3,10 @@ FROM ubuntu:noble
 ARG DEBIAN_FRONTEND=noninteractive
 ARG IMAGE_FULL_NAME="noname"
 
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+ENV USER=devuser
+ENV GROUP=devgroup
+
 # Usa Bash invece di sh per tutti i RUN
 SHELL ["/bin/bash", "-c"]
 
@@ -10,9 +14,28 @@ ENV TZ=UTC
 ENV LANG=en_US.utf8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
-ENV HOME_DIR=/root
+ENV HOME_DIR=/home/$USER
+
+LABEL \
+    org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
 
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
+
+RUN set -eux; \
+    if getent passwd 1000 > /dev/null; then \
+        OLD_USER=$(getent passwd 1000 | cut -d: -f1); \
+        echo "Rimozione utente esistente: $OLD_USER"; \
+        userdel -r $OLD_USER 2>/dev/null || userdel $OLD_USER; \
+    fi; \
+    if getent group 1000 > /dev/null; then \
+        OLD_GROUP=$(getent group 1000 | cut -d: -f1); \
+        echo "Rimozione gruppo esistente: $OLD_GROUP"; \
+        groupdel $OLD_GROUP; \
+    fi; \
+    groupadd -r $GROUP --gid=1000; \
+    useradd -r -g $GROUP --uid=1000 --home-dir=$HOME_DIR --shell=/bin/bash $USER; \
+    install --verbose --directory --owner $USER --group $GROUP --mode 1777 $HOME_DIR
+
 
 RUN set -x \
     && apt-get update -y \
@@ -55,10 +78,10 @@ RUN set -x \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*
 
+RUN set -eux; \
+    usermod -aG docker $USER
+
 RUN git config --global --add safe.directory /workdir
-
-WORKDIR /workdir
-
 
 # Create the .bashrc.d directory for the user (root by default in Docker)
 RUN mkdir -p $HOME_DIR/.bashrc.d
@@ -80,11 +103,16 @@ RUN set -eux; \
     fi; \
     if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
 
+RUN chown -R $USER:$GROUP $HOME_DIR
 
 COPY docker-entrypoint.sh /usr/local/bin/
 
 RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
 
 ENTRYPOINT ["/usr/bin/dumb-init","--","/usr/local/bin/docker-entrypoint.sh"]
+
+USER $USER
+
+WORKDIR /workdir
 
 CMD ["bash","-lc","echo Nessuno comando specificato."]
