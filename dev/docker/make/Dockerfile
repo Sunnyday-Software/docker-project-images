@@ -117,8 +117,6 @@ RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x
 
 ENTRYPOINT ["/usr/bin/dumb-init","--","/usr/local/bin/docker-entrypoint.sh"]
 
-USER $USER
-
 WORKDIR /workdir
 
 CMD ["bash","-lc","echo Nessuno comando specificato."]

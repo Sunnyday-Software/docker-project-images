@@ -22,22 +22,12 @@ function run_script_if_available() {
 }
 
 function docker_entrypoint_common {
-# Source all Bash files in the commons_functions directory
-. ~/.bashrc.d/load.sh
+  echo "🚀 Running docker_entrypoint_common as $(whoami)"
 
-  # Ottieni il GID del socket Docker se montato
-  if [ -S /var/run/docker.sock ]; then
-      DOCKER_SOCK_GID=$(stat -c '%g' /var/run/docker.sock)
+  # Source all Bash files in the commons_functions directory
+  . ~/.bashrc.d/load.sh
 
-      # Crea un gruppo con lo stesso GID se non esiste
-      if ! getent group $DOCKER_SOCK_GID > /dev/null; then
-          groupadd -g $DOCKER_SOCK_GID dockerhost
-      fi
-
-      # Aggiungi l'utente al gruppo
-      usermod -aG $DOCKER_SOCK_GID devuser
-  fi
-#execute workspace setup script
+  #execute workspace setup script
   run_script_if_available "/workdir/dev/scripts/setup.sh"
 
   #run user command
