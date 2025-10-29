@@ -38,7 +38,7 @@ RUN set -x \
 COPY home/ /home/devuser/
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
-
+RUN chmod +x "$HOME_DIR/.local/bin/*"
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
     echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
