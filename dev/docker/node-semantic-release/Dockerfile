@@ -38,18 +38,30 @@ RUN set -x \
 COPY home/ /home/devuser/
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
-RUN chmod +x "$HOME_DIR/.local/bin/*"
-# Make sure all scripts are executable (forza conversione + fallback sed e verifica)
+
+# Set permissions - simple and effective
+RUN set -eux; \
+    echo "Setting permissions in $HOME_DIR"; \
+    find "$HOME_DIR/.local/bin" -type f \
+      -exec chown devuser:devgroup {} \; \
+      -exec chmod +x {} \;
+
+# Make sure all scripts in .bashrc.d are normalized (inherited from base image)
 RUN set -eux; \
     echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
-    find "$HOME_DIR/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
-    while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
-    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then \
-      echo "CRLF still present, applying sed fallback"; \
-      while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
-    fi; \
-    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
-
+    if [ -d "$HOME_DIR/.bashrc.d" ]; then \
+        find "$HOME_DIR/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+        while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
+        if grep -r $'\r' -n "$HOME_DIR/.bashrc.d" 2>/dev/null; then \
+          echo "CRLF still present, applying sed fallback"; \
+          while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
+        fi; \
+        if grep -r $'\r' -n "$HOME_DIR/.bashrc.d" 2>/dev/null; then \
+            echo "❌ CRLF still present after normalization"; exit 1; \
+        else \
+            echo "✅ No CRLF remain"; \
+        fi; \
+    fi
 
 USER devuser
 WORKDIR /home/devuser
@@ -74,7 +86,8 @@ RUN set -eux; \
 USER root
 
 # Crea directory template per la home (copia completa)
-RUN cp -a $HOME_DIR/. /opt/home-template/
+RUN cp -a $HOME_DIR/. /opt/home-template/ && \
+    echo "✅ Home template updated with node-semantic-release files"
 
 
 
