@@ -21,9 +21,31 @@ GIT_CONFIG_GLOBAL=${GIT_CONFIG_GLOBAL:-$HOME/.gitconfig}
 export GIT_CONFIG_GLOBAL
 
 if [[ ! -f "$GIT_CONFIG_GLOBAL" ]]; then
-  mkdir -p "$(dirname "$GIT_CONFIG_GLOBAL")"
-  touch "$GIT_CONFIG_GLOBAL"
-  log "GIT_CONFIG_GLOBAL file '$GIT_CONFIG_GLOBAL' created"
+  # Verifica se la directory parent esiste e se possiamo crearla
+  config_dir="$(dirname "$GIT_CONFIG_GLOBAL")"
+
+  if [[ ! -d "$config_dir" ]]; then
+    if mkdir -p "$config_dir" 2>/dev/null; then
+      log "Created directory '$config_dir'"
+    else
+      warn "Cannot create directory '$config_dir'. Falling back to HOME directory."
+      GIT_CONFIG_GLOBAL="$HOME/.gitconfig"
+      export GIT_CONFIG_GLOBAL
+      config_dir="$(dirname "$GIT_CONFIG_GLOBAL")"
+      mkdir -p "$config_dir" || { err "Cannot create fallback directory '$config_dir'"; return 1; }
+    fi
+  fi
+
+  if touch "$GIT_CONFIG_GLOBAL" 2>/dev/null; then
+    log "GIT_CONFIG_GLOBAL file '$GIT_CONFIG_GLOBAL' created"
+  else
+    warn "Cannot create file '$GIT_CONFIG_GLOBAL'. Using fallback."
+    GIT_CONFIG_GLOBAL="$HOME/.gitconfig"
+    export GIT_CONFIG_GLOBAL
+    mkdir -p "$(dirname "$GIT_CONFIG_GLOBAL")"
+    touch "$GIT_CONFIG_GLOBAL"
+    log "Using fallback GIT_CONFIG_GLOBAL: '$GIT_CONFIG_GLOBAL'"
+  fi
 fi
 
 # Workaround per "Invalid cross-device link": imposta TMPDIR nello stesso filesystem di HOME
