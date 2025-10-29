@@ -53,7 +53,7 @@ RUN set -eux; \
 
 USER devuser
 WORKDIR /home/devuser
-ENV PATH="/home/devuser/node_modules/.bin:${PATH}"
+ENV PATH="/home/devuser/node_modules/.bin:/home/devuser/.local/bin:${PATH}"
 
 RUN set -eux; \
   if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then \
