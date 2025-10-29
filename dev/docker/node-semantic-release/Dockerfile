@@ -16,8 +16,6 @@ ARG NODE_ENV=production
 ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV NODE_ENV=${NODE_ENV}
 
-USER root
-
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 # Install Node.js
@@ -37,14 +35,14 @@ RUN set -x \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy .bashrc.d scripts
-COPY home/ /home/bashuser/
-RUN find /home/bashuser -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \; && \
-    find /home/bashuser/.local/bin -type f -exec chmod +x {} \; && \
-    chown bashuser:bashuser -R /home/bashuser
+COPY home/ /home/devuser/
+RUN find /home/devuser -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \; && \
+    find /home/devuser/.local/bin -type f -exec chmod +x {} \; && \
+    chown devuser:devuser -R /home/devuser
 
-USER bashuser
-WORKDIR /home/bashuser
-ENV PATH="/home/bashuser/node_modules/.bin:${PATH}"
+USER devuser
+WORKDIR /home/devuser
+ENV PATH="/home/devuser/node_modules/.bin:${PATH}"
 
 RUN set -eux; \
   if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then \
@@ -62,11 +60,10 @@ RUN set -eux; \
   fi; \
   npm cache clean --force
 
+USER root
 
-# Set working directory
-WORKDIR /workdir
+# Crea directory template per la home (copia completa)
+RUN cp -a $HOME_DIR/. /opt/home-template/
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-# Default command
-CMD ["node", "--version"]
+

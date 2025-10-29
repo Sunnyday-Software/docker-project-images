@@ -5,8 +5,12 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG IMAGE_FULL_NAME="noname"
 
 ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
-ENV USER=bashuser
-ENV GROUP=bashuser
+ENV USER=devuser
+ENV GROUP=devgroup
+
+# Usa Bash invece di sh per tutti i RUN
+SHELL ["/bin/bash", "-c"]
+
 ENV TZ=UTC
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -67,14 +71,6 @@ RUN set -x \
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
 
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN set -x \
-    && find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
-
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-
-
-
 # Create the .bashrc.d directory for the user (root by default in Docker)
 RUN mkdir -p $HOME_DIR/.bashrc.d
 
@@ -84,20 +80,31 @@ COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
 
-# Make sure all scripts are executable
-RUN set -x \
-    && find $HOME_DIR -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \; \
-    && chown $USER:$GROUP -R $HOME_DIR/.bashrc.d
+# Make sure all scripts are executable (forza conversione + fallback sed e verifica)
+RUN set -eux; \
+    echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
+    find "$HOME_DIR/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
+    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then \
+      echo "CRLF still present, applying sed fallback"; \
+      while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
+    fi; \
+    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
 
-VOLUME ["/home/bashuser/.ssh"]
-USER $USER
+RUN chown -R $USER:$GROUP $HOME_DIR
 
-ENV PATH="$HOME_DIR/.local/bin:${PATH}"
+# Crea directory template per la home (copia completa)
+RUN mkdir -p /opt/home-template && \
+    cp -a $HOME_DIR/. /opt/home-template/ && \
+    echo "✅ Home template created in /opt/home-template"
 
-USER bashuser
 
-# Set the working directory
+COPY docker-entrypoint.sh /usr/local/bin/
+
+RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
+
+ENTRYPOINT ["/usr/bin/dumb-init","--","/usr/local/bin/docker-entrypoint.sh"]
+
 WORKDIR /workdir
 
-# Imposta l'entrypoint per eseguire lo script passato come parametro
-CMD ["echo", "Nessuno script specificato."]
+CMD ["bash","-lc","echo Nessuno comando specificato."]
