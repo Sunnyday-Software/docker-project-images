@@ -5,7 +5,6 @@ This format leads to **easier to read commit history** and makes it analyzable f
 
 Each commit message consists of a **header**, a **body**, and a **footer**.
 
-
 ```
 <header>
 <BLANK LINE>
