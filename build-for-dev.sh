@@ -26,6 +26,6 @@ build_image() {
 }
 
 #build_image "dev/docker" "bash"
-#build_image "dev/docker" "make"
+build_image "dev/docker" "make"
 #build_image "dev/docker" "cdk8s" "sunnydaysoftware/bash:v-21"
-build_image "dev/docker" "node-semantic-release" "sunnydaysoftware/bash:v-22"
+#build_image "dev/docker" "node-semantic-release" "sunnydaysoftware/bash:v-22"

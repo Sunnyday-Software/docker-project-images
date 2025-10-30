@@ -20,22 +20,22 @@ set -e
 
 # Evita esecuzione multipla
 if [[ "${__GIT_BOOTSTRAP_DONE:-}" == "true" ]]; then
-    log "Already configured, skipping"
+    echo "Already configured, skipping"
     return 0
 fi
 
 # --- Inputs ---
 # --- Verifica variabili obbligatorie (senza bloccare) ---
 if [ -z "${GIT_HTTP_USER:-}" ]; then
-    warn "GIT_HTTP_USER not set - skipping git configuration"
-    warn "Set GIT_HTTP_USER to your GitHub login to enable git config"
+    echo "GIT_HTTP_USER not set - skipping git configuration"
+    echo "Set GIT_HTTP_USER to your GitHub login to enable git config"
     export __GIT_BOOTSTRAP_DONE=true
     return 0
 fi
 
 if [ -z "${GIT_HTTP_TOKEN:-}" ]; then
-    warn "GIT_HTTP_TOKEN not set - skipping git configuration"
-    warn "Set GIT_HTTP_TOKEN to a valid GitHub PAT to enable git config"
+    echo "GIT_HTTP_TOKEN not set - skipping git configuration"
+    echo "Set GIT_HTTP_TOKEN to a valid GitHub PAT to enable git config"
     export __GIT_BOOTSTRAP_DONE=true
     return 0
 fi
