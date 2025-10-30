@@ -27,6 +27,7 @@ Il container incapsula le funzionalità di **semantic release** e **conventional
 [footer opzionale]
 ```
 
+
 ### Tipi di Commit Supportati
 - `feat` - Nuova funzionalità per l'utente
 - `fix` - Correzione di bug
