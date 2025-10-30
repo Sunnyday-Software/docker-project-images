@@ -44,10 +44,16 @@ esac
 
 # Fase 1: Aggiorna versions.properties
 echo "=== Fase 1: Aggiornamento versions.properties ==="
-cat <<EOF | $DPM_EXEC
+# Prepara contenuto di configurazione per DPM ed evita la pipe: usa un file temporaneo
+TMPFILE="$(mktemp -t dpm_cfg.XXXXXX)"
+
+cat >"$TMPFILE" <<EOF
 (basedir-root)
 (version-check "dev/docker")
 EOF
+
+"$DPM_EXEC" --file "$TMPFILE"
+EXIT_CODE=$?
 
 # Verifica se ci sono stati cambiamenti nel file versions.properties
 if [ -n "$(git status --porcelain dev/docker/versions.properties)" ]; then
@@ -84,7 +90,9 @@ fi
 
 # Fase 2: Build e Push delle immagini
 echo "=== Fase 2: Build e Push delle immagini ==="
-cat <<EOF | $DPM_EXEC
+TMPFILE="$(mktemp -t dpm_cfg.XXXXXX)"
+
+cat >"$TMPFILE" <<EOF
 (basedir-root)
 (set-var "HOST_PROJECT_PATH" "\${CTX:basedir}")
 (set-var "DOCKER_PLATFORM" "${DOCKER_PLATFORM}")
@@ -94,5 +102,8 @@ cat <<EOF | $DPM_EXEC
 (read-env "dev/docker/versions.properties")
 (write-env ".env")
 EOF
+
+"$DPM_EXEC" --file "$TMPFILE"
+EXIT_CODE=$?
 
 ./dev/scripts/docker_image_build_and_push_script.sh
