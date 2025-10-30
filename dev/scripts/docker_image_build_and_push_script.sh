@@ -58,6 +58,9 @@ load_file_with_export "$(dirname "$0")/../docker/versions.properties"
 
 source "$(dirname "$0")/../../build_config.sh"
 
+echo "===================="
+env
+echo "===================="
 
 set -e
 
