@@ -2,6 +2,7 @@
 # Configure Git non-interactively in CI from env vars
 set -euo pipefail
 
+
 # --- Inputs ---
 : "${GIT_HTTP_USER:?Set GIT_HTTP_USER to your GitHub login (not email)}"
 : "${GIT_HTTP_TOKEN:?Set GIT_HTTP_TOKEN to a valid GitHub PAT}"
@@ -14,6 +15,11 @@ token="${GIT_HTTP_TOKEN%$'\n'}"; token="${token%$'\r'}"
 
 # --- Global git config in posto scrivibile ---
 mkdir -p "${CONFIG_HOME}/git" /workdir || true
+
+# Workaround per "Invalid cross-device link": imposta TMPDIR nello stesso filesystem di HOME
+export TMPDIR="${CONFIG_HOME}/.cache/tmp"
+mkdir -p "$TMPDIR" || true
+
 git config --global --unset-all credential.helper >/dev/null 2>&1 || true
 git config --global credential.helper "store --file=${CRED_FILE}"
 git config --global credential.useHttpPath false
@@ -39,6 +45,6 @@ fi
 
 # --- Debug “safe” ---
 echo "=== GIT DEBUG (safe) ==="
-git config --list --show-origin | grep -E 'credential|user\\.|url\\.' || true
+git config --list --show-origin | grep -E 'credential|user\.|url\.' || true
 printf "protocol=https\\nhost=%s\\n" "${GITHUB_HOST}" | git credential fill | sed -E 's/(password=).*/\\1***hidden***/'
 echo "========================"
