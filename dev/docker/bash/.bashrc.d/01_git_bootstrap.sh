@@ -100,15 +100,14 @@ if [ -z "${GIT_HTTP_TOKEN:-}" ]; then
 fi
 
 # ========== CALCOLI DERIVATI ==========
-GITHUB_HOST="${GIT_HTTP_HOST:-github.com}"
-CRED_FILE="${CRED_FILE:-/workdir/.git-credentials}"
+SAFE_HOME="${HOME:-${HOME_DIR:-/home/${USER}}}"
+CONFIG_HOME="${XDG_CONFIG_HOME:-${SAFE_HOME}/.config}"
+TMPDIR_CALC="${SAFE_HOME}/.cache/tmp"
 
-# Per evitare 'Invalid cross-device link' usiamo lo stesso FS di /workdir
-RUNTIME_BASE="/workdir/.runtime/git"
-CONFIG_HOME="${XDG_CONFIG_HOME:-$RUNTIME_BASE}"
-SAFE_HOME="${HOME:-$RUNTIME_BASE/home}"
-TMPDIR_CALC="${CONFIG_HOME}/.tmp"
 GIT_GLOBAL_CONFIG="${CONFIG_HOME}/git/config"
+CRED_FILE="${CRED_FILE:-${SAFE_HOME}/.git-credentials}"
+
+GITHUB_HOST="${GIT_HTTP_HOST:-github.com}"
 
 # Token sanitizzato
 token="${GIT_HTTP_TOKEN%$'\n'}"; token="${token%$'\r'}"
@@ -116,9 +115,6 @@ token="${GIT_HTTP_TOKEN%$'\n'}"; token="${token%$'\r'}"
 # Stampa variabili calcolate
 log "Calcolata: GITHUB_HOST - Host usato per remoti HTTPS; Default: github.com"
 log "Valore: ${GITHUB_HOST}"
-
-log "Calcolata: RUNTIME_BASE - Radice runtime su /workdir per stesso filesystem; Default: /workdir/.runtime/git"
-log "Valore: ${RUNTIME_BASE}"
 
 log "Calcolata: CONFIG_HOME - Base config effettiva; Default: \$RUNTIME_BASE"
 log "Valore: ${CONFIG_HOME}"
@@ -135,19 +131,11 @@ log "Valore: ${GIT_GLOBAL_CONFIG}"
 log "Calcolata: CRED_FILE - File credenziali git; Default: /workdir/.git-credentials"
 log "Valore: ${CRED_FILE}"
 
-# ========== PRE-CHECK PERMESSI E FS ==========
-# Verifica /workdir
-if ! ensure_dir_writable "/workdir"; then
-  warn "Impossibile garantire scrittura su /workdir; skip configurazione git."
-  export __GIT_BOOTSTRAP_DONE=true
-  return 0
-fi
-
 # Verifica CONFIG_HOME, SAFE_HOME, TMPDIR e dir credenziali
-ensure_dir_writable "$CONFIG_HOME"     || { warn "CONFIG_HOME non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
 ensure_dir_writable "$SAFE_HOME"       || { warn "SAFE_HOME non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
-ensure_dir_writable "$TMPDIR_CALC"     || { warn "TMPDIR non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
+ensure_dir_writable "$CONFIG_HOME"     || { warn "CONFIG_HOME non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
 ensure_dir_writable "$(dirname "$GIT_GLOBAL_CONFIG")" || { warn "Dir config git non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
+ensure_dir_writable "$TMPDIR_CALC"     || { warn "TMPDIR non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
 ensure_dir_writable "$(dirname "$CRED_FILE")" || { warn "Dir credenziali non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
 
 # ========== EXPORT AMBIENTE PER GIT ==========

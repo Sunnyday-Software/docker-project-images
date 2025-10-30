@@ -2,7 +2,7 @@
 
 Questo container Docker fornisce un ambiente completo e preconfigurato per l'automazione del rilascio di pacchetti e la validazione dei commit utilizzando [semantic-release](https://semantic-release.gitbook.io/) e [commitlint](https://commitlint.js.org/).
 
-## Scopo del Container:
+## Scopo del Container
 
 Il container incapsula le funzionalità di **semantic release** e **conventional commits** per essere riutilizzato da qualsiasi progetto senza dover configurare questi strumenti da zero. L'obiettivo è fornire una soluzione già configurata che non richiede modifiche al progetto sottostante, mantenendo al contempo la possibilità di personalizzazione attraverso convenzioni definite.
 
