@@ -18,9 +18,28 @@ trap 'error_handler ${LINENO} "$BASH_COMMAND" $?' ERR
 
 set -e
 
+# Evita esecuzione multipla
+if [[ "${__GIT_BOOTSTRAP_DONE:-}" == "true" ]]; then
+    log "Already configured, skipping"
+    return 0
+fi
+
 # --- Inputs ---
-: "${GIT_HTTP_USER:?Set GIT_HTTP_USER to your GitHub login (not email)}"
-: "${GIT_HTTP_TOKEN:?Set GIT_HTTP_TOKEN to a valid GitHub PAT}"
+# --- Verifica variabili obbligatorie (senza bloccare) ---
+if [ -z "${GIT_HTTP_USER:-}" ]; then
+    warn "GIT_HTTP_USER not set - skipping git configuration"
+    warn "Set GIT_HTTP_USER to your GitHub login to enable git config"
+    export __GIT_BOOTSTRAP_DONE=true
+    return 0
+fi
+
+if [ -z "${GIT_HTTP_TOKEN:-}" ]; then
+    warn "GIT_HTTP_TOKEN not set - skipping git configuration"
+    warn "Set GIT_HTTP_TOKEN to a valid GitHub PAT to enable git config"
+    export __GIT_BOOTSTRAP_DONE=true
+    return 0
+fi
+
 GITHUB_HOST="${GIT_HTTP_HOST:-github.com}"
 CRED_FILE="${CRED_FILE:-/workdir/.git-credentials}"   # dove salvare le credenziali
 
