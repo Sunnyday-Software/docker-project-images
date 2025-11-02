@@ -28,6 +28,7 @@ load_file_with_export "$(dirname "$0")/../docker/versions.properties"
 for image_ref in "${BUILD_ORDER[@]}"; do
     image_data=$image_ref
     image_name="${image_data[name]}"
+    context="$(dirname "$0")/../docker/${image_name}"
     deps_dir="$context/dependencies"
     deps_on="${image_data[depends_on]}"
     normalized_name=$(echo "$image_name" | tr '[:lower:]' '[:upper:]' | sed 's/[^[:alnum:]]/_/g')
