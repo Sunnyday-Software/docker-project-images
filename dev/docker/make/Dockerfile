@@ -73,13 +73,3 @@ RUN mkdir -p /opt/home-template && \
     cp -a $HOME_DIR/. /opt/home-template/ && \
     echo "✅ Home template created in /opt/home-template"
 
-
-COPY docker-entrypoint.sh /usr/local/bin/
-
-RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
-
-ENTRYPOINT ["/usr/bin/dumb-init","--","/usr/local/bin/docker-entrypoint.sh"]
-
-WORKDIR /workdir
-
-CMD ["bash","-lc","echo Nessuno comando specificato."]
