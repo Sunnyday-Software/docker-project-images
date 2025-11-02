@@ -1,31 +1,100 @@
-# (opzionale) abilita BuildKit per build più veloce
+#!/usr/bin/env bash
+
+set -x
+set -v
+
+chmod +x ./dev/scripts/*.sh
+chmod +x ./dpm/*
+
 export DOCKER_BUILDKIT=1
-export DOCKERHUB_USERNAME=sunnydaysoftware
-export PLATFORM="linux/arm64"
-export PLATFORM_TAG="arm64"
 
-build_image() {
-  local image_base_path="$1"
-  local image_name="$2"
-  local base_image_name="$3"
+# Detect OS and architecture
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+DOCKER_PLATFORM="linux/amd64"
+PLATFORM_TAG="amd64"
 
-  cmd=(docker build --no-cache --pull \
-    --platform $PLATFORM \
-    --build-arg PLATFORM_TAG="$PLATFORM_TAG" \
-    --build-arg IMAGE_FULL_NAME="sunnydaysoftware/${image_name}:localdev"  \
-    --build-arg BASE_IMAGE="${base_image_name}" \
-    -t $image_name:localdev \
-    "$image_base_path/$image_name")
+# Map architecture names
+case "$ARCH" in
+    x86_64) ARCH="x86_64" ;;
+    amd64)  ARCH="x86_64" ;;
+    arm64)
+      ARCH="arm64"
+      DOCKER_PLATFORM="linux/arm64"
+      PLATFORM_TAG="arm64"
+      ;;
+    aarch64)
+      ARCH="arm64"
+      DOCKER_PLATFORM="linux/arm64"
+      PLATFORM_TAG="arm64"
+      ;;
+    *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
+esac
 
-  printf 'Eseguo:'
-  printf ' %q' "${cmd[@]}"
-  printf '\n'
+# Select appropriate DPM executable
+case "$OS" in
+    linux)
+        DPM_EXEC="./dpm/dpm-linux-${ARCH}-musl"
+        ;;
+    darwin)
+        DPM_EXEC="./dpm/dpm-macos-${ARCH}"
+        ;;
+    *)
+        echo "Unsupported operating system: $OS" && exit 1
+        ;;
+esac
 
-  "${cmd[@]}"
+# Fase 0: Preparazione file dipendenze
+mv "$(dirname "$0")/dev/docker/versions.properties" "$(dirname "$0")/dev/docker/versions.properties.backup"
+./dev/scripts/docker_prepare_dependencies_info.sh
 
-}
+# Calcola la versione senza le dipendenze, soltanto
+TMPFILE="$(mktemp -t dpm_cfg.XXXXXX)"
 
-#build_image "dev/docker" "bash"
-build_image "dev/docker" "make"
-#build_image "dev/docker" "cdk8s" "sunnydaysoftware/bash:v-21"
-#build_image "dev/docker" "node-semantic-release" "sunnydaysoftware/bash:v-22"
+cat >"$TMPFILE" <<EOF
+(basedir-root)
+(version-check "dev/docker")
+EOF
+
+"$DPM_EXEC" --file "$TMPFILE"
+
+./dev/scripts/docker_prepare_dependencies_info_step_2.sh
+mv "$(dirname "$0")/dev/docker/versions.properties.backup" "$(dirname "$0")/dev/docker/versions.properties"
+
+
+
+# Fase 1: Aggiorna versions.properties
+echo "=== Fase 1: Aggiornamento versions.properties ==="
+# Prepara contenuto di configurazione per DPM ed evita la pipe: usa un file temporaneo
+TMPFILE="$(mktemp -t dpm_cfg.XXXXXX)"
+
+cat >"$TMPFILE" <<EOF
+(basedir-root)
+(version-check "dev/docker")
+EOF
+
+"$DPM_EXEC" --file "$TMPFILE"
+EXIT_CODE=$?
+
+
+
+
+# Fase 2: Build e Push delle immagini
+echo "=== Fase 2: Build e Push delle immagini ==="
+TMPFILE="$(mktemp -t dpm_cfg.XXXXXX)"
+
+cat >"$TMPFILE" <<EOF
+(basedir-root)
+(set-var "HOST_PROJECT_PATH" "\${CTX:basedir}")
+(set-var "DOCKER_PLATFORM" "${DOCKER_PLATFORM}")
+(set-var "PLATFORM_TAG" "${PLATFORM_TAG}")
+(read-env ".env.ci")
+(read-env ".env.project")
+(read-env "dev/docker/versions.properties")
+(write-env ".env")
+EOF
+
+"$DPM_EXEC" --file "$TMPFILE"
+EXIT_CODE=$?
+
+"$(dirname "$0")/dev/scripts/docker_image_build_and_push_script.sh" --no-push --amd64-only

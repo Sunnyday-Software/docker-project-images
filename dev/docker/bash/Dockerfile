@@ -1,4 +1,3 @@
-
 FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive

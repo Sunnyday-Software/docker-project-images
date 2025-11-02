@@ -4,7 +4,7 @@
 # Ogni immagine è definita come un array associativo con:
 # - name: nome dell'immagine
 # - platforms: piattaforme supportate (amd64, arm64, o entrambe)
-# - depends_on: dipendenze da altre immagini (opzionale)
+# - depends_on: dipendenze da altre immagini, inserire le dipendenze dirette e indirette come elenco separato da virgole
 # - build_args: argomenti di build completi chiave=valore (opzionale)
 # - env_to_args: lista di variabili ambientali da trasformare in --build-arg (opzionale)
 
@@ -47,22 +47,11 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
-declare -A IMAGE_CDK8S=(
-    [name]="cdk8s"
-    [platforms]="arm64,amd64"
-    [dockerfile]="dev/docker/cdk8s/Dockerfile"
-    [context]="dev/docker/cdk8s"
-    [depends_on]="bash"
-    [build_args]=""
-    [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
-)
-
 # Ordine di build delle immagini
 BUILD_ORDER=(
-    "IMAGE_MAKE"
-    "IMAGE_BASH"
-    "IMAGE_NODE_SEMANTIC_RELEASE"
-    "IMAGE_CDK8S"
+    IMAGE_MAKE
+    IMAGE_BASH
+    IMAGE_NODE_SEMANTIC_RELEASE
 )
 
 # Funzione per ottenere le informazioni di un'immagine
