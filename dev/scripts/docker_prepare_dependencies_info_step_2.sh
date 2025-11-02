@@ -26,7 +26,7 @@ load_file_with_export "$(dirname "$0")/../docker/versions.properties"
 
 # Ciclo attraverso le immagini nell'ordine specificato
 for image_ref in "${BUILD_ORDER[@]}"; do
-    image_data=$image_ref
+    declare -n image_data="$image_ref"
     image_name="${image_data[name]}"
     context="$(dirname "$0")/../../${image_data[context]}"
     deps_dir="$context/dependencies"

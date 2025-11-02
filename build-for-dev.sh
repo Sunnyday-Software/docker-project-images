@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -x
+set -v
+
 chmod +x ./dev/scripts/*.sh
 chmod +x ./dpm/*
 
@@ -42,7 +45,7 @@ case "$OS" in
 esac
 
 # Fase 0: Preparazione file dipendenze
-mv "./dev/docker/versions.properties" "./dev/docker/versions.properties.backup"
+mv "$(dirname "$0")/dev/docker/versions.properties" "$(dirname "$0")/dev/docker/versions.properties.backup"
 ./dev/scripts/docker_prepare_dependencies_info.sh
 
 # Calcola la versione senza le dipendenze, soltanto
@@ -56,7 +59,7 @@ EOF
 "$DPM_EXEC" --file "$TMPFILE"
 
 ./dev/scripts/docker_prepare_dependencies_info_step_2.sh
-mv "./dev/docker/versions.properties.backup" "./dev/docker/versions.properties"
+mv "$(dirname "$0")/dev/docker/versions.properties.backup" "$(dirname "$0")/dev/docker/versions.properties"
 
 
 
@@ -94,4 +97,4 @@ EOF
 "$DPM_EXEC" --file "$TMPFILE"
 EXIT_CODE=$?
 
-./dev/scripts/docker_image_build_and_push_script.sh --no-push --amd64-only
+"$(dirname "$0")/dev/scripts/docker_image_build_and_push_script.sh" --no-push --amd64-only

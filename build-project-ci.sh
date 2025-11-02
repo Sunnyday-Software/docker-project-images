@@ -42,8 +42,8 @@ case "$OS" in
 esac
 
 # Fase 0: Preparazione file dipendenze
-mv "./dev/docker/versions.properties" "./dev/docker/versions.properties.backup"
-./dev/scripts/docker_prepare_dependencies_info.sh
+mv "$(dirname "$0")/dev/docker/versions.properties" "$(dirname "$0")/dev/docker/versions.properties.backup"
+"$(dirname "$0")/dev/scripts/docker_prepare_dependencies_info.sh"
 
 # Calcola la versione senza le dipendenze, soltanto
 TMPFILE="$(mktemp -t dpm_cfg.XXXXXX)"
@@ -55,8 +55,8 @@ EOF
 
 "$DPM_EXEC" --file "$TMPFILE"
 
-./dev/scripts/docker_prepare_dependencies_info_step_2.sh
-mv "./dev/docker/versions.properties.backup" "./dev/docker/versions.properties"
+"$(dirname "$0")/dev/scripts/docker_prepare_dependencies_info_step_2.sh"
+mv "$(dirname "$0")/dev/docker/versions.properties.backup" "$(dirname "$0")/dev/docker/versions.properties"
 
 
 
