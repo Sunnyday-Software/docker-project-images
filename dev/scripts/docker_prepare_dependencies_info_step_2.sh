@@ -6,7 +6,7 @@ load_file_with_export() {
 
     if [ -f "$env_file" ]; then
         local filename=$(basename "$env_file")
-        log "Loading $filename..."
+        echo "Loading $filename..."
 
         # Abilita export automatico
         set -a
@@ -16,7 +16,7 @@ load_file_with_export() {
 
         return 0
     else
-        log "File not found: $env_file"
+        echo "File not found: $env_file"
         return 1
     fi
 }
