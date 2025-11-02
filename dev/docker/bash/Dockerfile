@@ -62,6 +62,7 @@ RUN set -x \
     screen \
     tmux \
     unzip \
+    && apt-get upgrade -y \
     && apt-get clean \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*

@@ -2,13 +2,6 @@
 
 set -e
 
-function docker_entrypoint_common {
-
-  "$@"
-  return $?
-}
-
-
 function docker_entrypoint_tmux {
   # Avvia o riutilizza una sessione tmux per eseguire il comando passato.
   # Variabili:
