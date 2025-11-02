@@ -31,9 +31,7 @@ for image_ref in "${BUILD_ORDER[@]}"; do
     context="$(dirname "$0")/../../${image_data[context]}"
     deps_dir="$context/dependencies"
     deps_on="${image_data[depends_on]}"
-    normalized_name=$(echo "$image_name" | tr '[:lower:]' '[:upper:]' | sed 's/[^[:alnum:]]/_/g')
-    checksum_var="${normalized_name}_CHECKSUM"
-    checksum_value=${!checksum_var}
+
 
     # Process each dependency if deps_on is not empty
     if [ -n "$deps_on" ]; then
@@ -43,6 +41,9 @@ for image_ref in "${BUILD_ORDER[@]}"; do
             dep=$(echo "$dep" | xargs)
             if [ -n "$dep" ]; then
                 # Write CRC to a file named after the dependency
+                normalized_name=$(echo "$dep" | tr '[:lower:]' '[:upper:]' | sed 's/[^[:alnum:]]/_/g')
+                checksum_var="${normalized_name}_CHECKSUM"
+                checksum_value=${!checksum_var}
                 echo "$checksum_value" > "$deps_dir/$dep"
                 git add "$deps_dir/$dep"
             fi
