@@ -24,7 +24,7 @@ declare -A IMAGE_MAKE=(
     [context]="dev/docker/make"
     [depends_on]="bash"
     [build_args]=""
-    [env_to_args]="DOCKERHUB_USERNAME"
+    [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
 declare -A IMAGE_OPENTOFU=(

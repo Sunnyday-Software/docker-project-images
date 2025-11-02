@@ -1,74 +1,37 @@
-FROM ubuntu:noble
+
+ARG DOCKERHUB_USERNAME
+ARG BASH_CHECKSUM
+ARG PLATFORM_TAG
+
+ARG BASE_IMAGE=${DOCKERHUB_USERNAME}/bash:${BASH_CHECKSUM}-${PLATFORM_TAG}
+
+FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG IMAGE_FULL_NAME="noname"
 
 ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
-ENV USER=devuser
-ENV GROUP=devgroup
 
 # Usa Bash invece di sh per tutti i RUN
 SHELL ["/bin/bash", "-c"]
 
-ENV TZ=UTC
-ENV LANG=en_US.utf8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
-ENV HOME_DIR=/home/$USER
 
 LABEL \
     org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
 
 RUN echo "IMAGE_FULL_NAME=\"${IMAGE_FULL_NAME}\"" > /etc/image-info
 
-RUN set -eux; \
-    if getent passwd 1000 > /dev/null; then \
-        OLD_USER=$(getent passwd 1000 | cut -d: -f1); \
-        echo "Rimozione utente esistente: $OLD_USER"; \
-        userdel -r $OLD_USER 2>/dev/null || userdel $OLD_USER; \
-    fi; \
-    if getent group 1000 > /dev/null; then \
-        OLD_GROUP=$(getent group 1000 | cut -d: -f1); \
-        echo "Rimozione gruppo esistente: $OLD_GROUP"; \
-        groupdel $OLD_GROUP; \
-    fi; \
-    groupadd -r $GROUP --gid=1000; \
-    useradd -r -g $GROUP --uid=1000 --home-dir=$HOME_DIR --shell=/bin/bash $USER; \
-    install --verbose --directory --owner $USER --group $GROUP --mode 1777 $HOME_DIR
-
 
 RUN set -x \
     && apt-get update -y \
     && apt-get install -y --no-install-recommends \
-    apt-utils \
     build-essential \
-    ca-certificates \
     pkg-config \
     cmake \
-    gettext \
-    git \
-    wget \
-    dumb-init \
-    gosu \
-    tzdata \
-    locales \
-    jq \
-    yq \
-    bash \
-    openssl \
-    rsync \
-    dos2unix \
-    curl \
-    gnupg \
-    openssh-client \
-    screen \
-    tree \
     make \
     && apt-get clean \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*
-
-RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
 RUN set -x \
     && curl -fsSL https://get.docker.com -o ./install-docker.sh \
