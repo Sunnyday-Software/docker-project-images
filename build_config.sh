@@ -4,7 +4,7 @@
 # Ogni immagine è definita come un array associativo con:
 # - name: nome dell'immagine
 # - platforms: piattaforme supportate (amd64, arm64, o entrambe)
-# - depends_on: dipendenze da altre immagini (opzionale)
+# - depends_on: dipendenze da altre immagini, inserire le dipendenze dirette e indirette come elenco separato da virgole
 # - build_args: argomenti di build completi chiave=valore (opzionale)
 # - env_to_args: lista di variabili ambientali da trasformare in --build-arg (opzionale)
 

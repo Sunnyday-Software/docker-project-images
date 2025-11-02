@@ -41,6 +41,24 @@ case "$OS" in
         ;;
 esac
 
+# Fase 0: Preparazione file dipendenze
+mv "./dev/docker/versions.properties" "./dev/docker/versions.properties.backup"
+./dev/scripts/docker_prepare_dependencies_info.sh
+
+# Calcola la versione senza le dipendenze, soltanto
+TMPFILE="$(mktemp -t dpm_cfg.XXXXXX)"
+
+cat >"$TMPFILE" <<EOF
+(basedir-root)
+(version-check "dev/docker")
+EOF
+
+"$DPM_EXEC" --file "$TMPFILE"
+
+./dev/scripts/docker_prepare_dependencies_info_step_2.sh
+mv "./dev/docker/versions.properties.backup" "./dev/docker/versions.properties"
+
+
 
 # Fase 1: Aggiorna versions.properties
 echo "=== Fase 1: Aggiornamento versions.properties ==="
