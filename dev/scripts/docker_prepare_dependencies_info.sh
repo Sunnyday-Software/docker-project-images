@@ -6,12 +6,11 @@ source "$(dirname "$0")/../../build_config.sh"
 for image_ref in "${BUILD_ORDER[@]}"; do
     image_data=$image_ref
     image_name="${image_data[name]}"
-    context="$(dirname "$0")/../docker/${image_name}"
+    context="$(dirname "$0")/../../${image_data[context]}"
     deps_dir="$context/dependencies"
     # Rimuovi e ricrea la cartella dependencies
     if [ -d "$deps_dir" ]; then
         rm -rf "$deps_dir"
     fi
     mkdir -p "$deps_dir"
-
 done
