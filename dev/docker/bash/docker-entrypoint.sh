@@ -29,6 +29,62 @@ log_and_execute() {
     return $exit_code
 }
 
+
+# Funzione per gestire i gruppi extra
+setup_extra_groups() {
+  local extra_gids="${EXTRA_GID:-}"
+
+  if [ -z "$extra_gids" ]; then
+    echo "ℹ️  Nessun gruppo extra da configurare (EXTRA_GID non impostato)"
+    return 0
+  fi
+
+  echo "🔧 Configurazione gruppi extra per $USER..."
+
+  # Split per virgola o spazio
+  IFS=',' read -ra GIDS <<< "$extra_gids"
+
+  for gid in "${GIDS[@]}"; do
+    # Rimuovi spazi
+    gid=$(echo "$gid" | xargs)
+
+    # Verifica che sia un numero
+    if ! [[ "$gid" =~ ^[0-9]+$ ]]; then
+      echo "⚠️  Warning: GID '$gid' non valido, ignorato"
+      continue
+    fi
+
+    # Verifica se il GID è già in uso
+    existing_group=$(getent group "$gid" | cut -d: -f1 || echo "")
+
+    if [ -n "$existing_group" ]; then
+      echo "  ➤ Gruppo esistente trovato: $existing_group (GID: $gid)"
+      group_name="$existing_group"
+    else
+      # Crea un gruppo fittizio con quel GID
+      group_name="hostgid_${gid}"
+      echo "  ➤ Creazione gruppo fittizio: $group_name (GID: $gid)"
+
+      if groupadd -g "$gid" "$group_name" 2>/dev/null; then
+        echo "    ✅ Gruppo $group_name creato"
+      else
+        echo "    ⚠️  Impossibile creare gruppo con GID $gid, ignorato"
+        continue
+      fi
+    fi
+
+    # Aggiungi l'utente al gruppo
+    if usermod -aG "$group_name" "$USER" 2>/dev/null; then
+      echo "    ✅ Utente $USER aggiunto al gruppo $group_name (GID: $gid)"
+    else
+      echo "    ⚠️  Impossibile aggiungere $USER al gruppo $group_name"
+    fi
+  done
+
+  echo "✅ Configurazione gruppi extra completata"
+  echo "📋 Gruppi dell'utente $USER: $(id -Gn $USER)"
+}
+
 # Set up the trap to catch errors
 trap 'error_handler ${LINENO} "$BASH_COMMAND" $?' ERR
 
@@ -135,6 +191,8 @@ chmod 700 "$HOME_DIR/.ssh" || true
 
 # Assicura che tutti i file nella home abbiano il proprietario corretto
 chown -R $USER:$GROUP "$HOME_DIR"
+
+setup_extra_groups
 
 # Prevent core dumps
 ulimit -c 0
