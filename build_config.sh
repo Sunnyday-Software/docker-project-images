@@ -47,22 +47,11 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
-declare -A IMAGE_CDK8S=(
-    [name]="cdk8s"
-    [platforms]="arm64,amd64"
-    [dockerfile]="dev/docker/cdk8s/Dockerfile"
-    [context]="dev/docker/cdk8s"
-    [depends_on]="bash"
-    [build_args]=""
-    [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
-)
-
 # Ordine di build delle immagini
 BUILD_ORDER=(
     "IMAGE_MAKE"
     "IMAGE_BASH"
     "IMAGE_NODE_SEMANTIC_RELEASE"
-    "IMAGE_CDK8S"
 )
 
 # Funzione per ottenere le informazioni di un'immagine
