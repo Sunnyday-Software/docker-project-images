@@ -5,8 +5,8 @@ source /etc/image-info
 set +a
 
 # Controlla se gli script .bashrc.d sono già stati caricati
-if [ "${__BASHRC_LOADED:-}" != "true" ]; then
-    export __BASHRC_LOADED="true"
+if [ "${__BASHRC_ROOT_LOADED:-}" != "true" ]; then
+    export __BASHRC_ROOT_LOADED="true"
 
   # Carica una sola volta tutti gli script in ~/.bashrc.d/
   for file in ~/.bashrc.d/*.sh; do

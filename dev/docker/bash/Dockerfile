@@ -7,9 +7,6 @@ ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV USER=devuser
 ENV GROUP=devgroup
 
-# Usa Bash invece di sh per tutti i RUN
-SHELL ["/bin/bash", "-c"]
-
 ENV TZ=UTC
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -49,6 +46,7 @@ RUN set -x \
     jq \
     yq \
     bash \
+    file \
     git \
     gettext \
     openssl \
@@ -67,6 +65,8 @@ RUN set -x \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*
 
+# Usa Bash invece di sh per tutti i RUN
+SHELL ["/bin/bash", "-c"]
 
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
@@ -76,9 +76,21 @@ RUN mkdir -p $HOME_DIR/.bashrc.d
 
 # Copy all .sh files from .bashrc.d to the .bashrc.d directory
 COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
+COPY root/.bashrc.d/*.sh /root/.bashrc.d/
 
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
+
+# Make sure all scripts are executable (forza conversione + fallback sed e verifica)
+RUN set -eux; \
+    echo "Normalizing shell scripts under /root/.bashrc.d"; \
+    find "/root/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
+    if grep -r $'\r' -n "/root/.bashrc.d"; then \
+      echo "CRLF still present, applying sed fallback"; \
+      while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
+    fi; \
+    if grep -r $'\r' -n "/root/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
 
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
@@ -90,6 +102,7 @@ RUN set -eux; \
       while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
     fi; \
     if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
+
 
 RUN chown -R $USER:$GROUP $HOME_DIR
 

@@ -5,6 +5,11 @@
 # Robustezza: stampa configurazione iniziale e calcolata; verifica permessi prima di creare/scrivere; evita cross-device link.
 
 # ========== UTILITIES ==========
+dbg()  {
+    if [[ "${GIT_DEBUG:-false}" == "true" ]]; then
+    echo "[git-bootstrap] $*" >&2;
+    fi
+}
 log()  { echo "[git-bootstrap] $*" >&2; }
 warn() { echo "[git-bootstrap][WARN] $*" >&2; }
 err()  { echo "[git-bootstrap][ERROR] $*" >&2; }
@@ -61,31 +66,31 @@ fi
 
 # ========== CONFIGURAZIONE INIZIALE (INPUT) ==========
 # GIT_HTTP_USER: obbligatoria per HTTPS, username o 'x-access-token' per GitHub (se manca: uscita soft)
-log "Variabile: GIT_HTTP_USER - Necessaria per auth HTTPS; Obbligatoria: sì; Fonte: env; Default: n/d"
-log "Valore: ${GIT_HTTP_USER:-<unset>}"
+dbg "Variabile: GIT_HTTP_USER - Necessaria per auth HTTPS; Obbligatoria: sì; Fonte: env; Default: n/d"
+dbg "Valore: ${GIT_HTTP_USER:-<unset>}"
 
 # GIT_HTTP_TOKEN: obbligatoria per HTTPS, PAT GitHub (se manca: uscita soft)
-log "Variabile: GIT_HTTP_TOKEN - Necessaria per auth HTTPS; Obbligatoria: sì; Fonte: env; Default: n/d"
-log "Valore: ${GIT_HTTP_TOKEN:+***masked***}${GIT_HTTP_TOKEN:-<unset>:+}"
+dbg "Variabile: GIT_HTTP_TOKEN - Necessaria per auth HTTPS; Obbligatoria: sì; Fonte: env; Default: n/d"
+dbg "Valore: ${GIT_HTTP_TOKEN:+***masked***}${GIT_HTTP_TOKEN:-<unset>:+}"
 
 # GIT_HTTP_HOST: host Git (default github.com)
-log "Variabile: GIT_HTTP_HOST - Host Git; Obbligatoria: no; Fonte: env; Default: github.com"
-log "Valore: ${GIT_HTTP_HOST:-<default>}"
+dbg "Variabile: GIT_HTTP_HOST - Host Git; Obbligatoria: no; Fonte: env; Default: github.com"
+dbg "Valore: ${GIT_HTTP_HOST:-<default>}"
 
 # CRED_FILE: path file credenziali git-credential-store
-log "Variabile: CRED_FILE - File credenziali; Obbligatoria: no; Fonte: env; Default: /workdir/.git-credentials"
-log "Valore: ${CRED_FILE:-/workdir/.git-credentials}"
+dbg "Variabile: CRED_FILE - File credenziali; Obbligatoria: no; Fonte: env; Default: /workdir/.git-credentials"
+dbg "Valore: ${CRED_FILE:-/workdir/.git-credentials}"
 
 # XDG_CONFIG_HOME: base config (se assente calcoliamo fallback su /workdir)
-log "Variabile: XDG_CONFIG_HOME - Base config; Obbligatoria: no; Fonte: env; Default: <calcolato>"
+dbg "Variabile: XDG_CONFIG_HOME - Base config; Obbligatoria: no; Fonte: env; Default: <calcolato>"
 
 # HOME: usato da git se non sovrascritto (potremmo ricalcolarlo)
-log "Variabile: HOME - Home utente; Obbligatoria: no; Fonte: ambiente container"
-log "Valore: ${HOME:-<unset>}"
+dbg "Variabile: HOME - Home utente; Obbligatoria: no; Fonte: ambiente container"
+dbg "Valore: ${HOME:-<unset>}"
 
 # CI: indicatore ambiente CI
-log "Variabile: CI - Contesto CI; Obbligatoria: no; Fonte: env; Default: false"
-log "Valore: ${CI:-false}"
+dbg "Variabile: CI - Contesto CI; Obbligatoria: no; Fonte: env; Default: false"
+dbg "Valore: ${CI:-false}"
 
 # Se mancano le variabili obbligatorie, uscita soft
 if [ -z "${GIT_HTTP_USER:-}" ]; then
@@ -113,23 +118,23 @@ GITHUB_HOST="${GIT_HTTP_HOST:-github.com}"
 token="${GIT_HTTP_TOKEN%$'\n'}"; token="${token%$'\r'}"
 
 # Stampa variabili calcolate
-log "Calcolata: GITHUB_HOST - Host usato per remoti HTTPS; Default: github.com"
-log "Valore: ${GITHUB_HOST}"
+dbg "Calcolata: GITHUB_HOST - Host usato per remoti HTTPS; Default: github.com"
+dbg "Valore: ${GITHUB_HOST}"
 
-log "Calcolata: CONFIG_HOME - Base config effettiva; Default: \$RUNTIME_BASE"
-log "Valore: ${CONFIG_HOME}"
+dbg "Calcolata: CONFIG_HOME - Base config effettiva; Default: \$RUNTIME_BASE"
+dbg "Valore: ${CONFIG_HOME}"
 
-log "Calcolata: SAFE_HOME - HOME effettiva per operazioni git; Default: \$RUNTIME_BASE/home"
-log "Valore: ${SAFE_HOME}"
+dbg "Calcolata: SAFE_HOME - HOME effettiva per operazioni git; Default: \$RUNTIME_BASE/home"
+dbg "Valore: ${SAFE_HOME}"
 
-log "Calcolata: TMPDIR - Temporary directory per operazioni atomiche git; Default: \$CONFIG_HOME/.tmp"
-log "Valore: ${TMPDIR_CALC}"
+dbg "Calcolata: TMPDIR - Temporary directory per operazioni atomiche git; Default: \$CONFIG_HOME/.tmp"
+dbg "Valore: ${TMPDIR_CALC}"
 
-log "Calcolata: GIT_GLOBAL_CONFIG - Percorso config globale; Default: \$CONFIG_HOME/git/config"
-log "Valore: ${GIT_GLOBAL_CONFIG}"
+dbg "Calcolata: GIT_GLOBAL_CONFIG - Percorso config globale; Default: \$CONFIG_HOME/git/config"
+dbg "Valore: ${GIT_GLOBAL_CONFIG}"
 
-log "Calcolata: CRED_FILE - File credenziali git; Default: /workdir/.git-credentials"
-log "Valore: ${CRED_FILE}"
+dbg "Calcolata: CRED_FILE - File credenziali git; Default: /workdir/.git-credentials"
+dbg "Valore: ${CRED_FILE}"
 
 # Verifica CONFIG_HOME, SAFE_HOME, TMPDIR e dir credenziali
 ensure_dir_writable "$SAFE_HOME"       || { warn "SAFE_HOME non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
@@ -164,7 +169,10 @@ git config --global url."https://${GITHUB_HOST}/".insteadOf "git@${GITHUB_HOST}:
 git config --global user.name  "${GIT_USER_NAME:-${GITHUB_ACTOR:-ci-bot}}" 2>/dev/null || warn "user.name non impostato"
 git config --global user.email "${GIT_USER_EMAIL:-${GITHUB_ACTOR:-ci-bot}}@users.noreply.github.com" 2>/dev/null || warn "user.email non impostato"
 git config --global commit.gpgsign false 2>/dev/null || true
-git config --global --add safe.directory /workdir 2>/dev/null || true
+
+if ! git config --global --get-all safe.directory | grep -q "^/workdir$"; then
+  git config --global --add safe.directory /workdir 2>/dev/null || true
+fi
 
 # ========== CREDENZIALI ==========
 umask 077

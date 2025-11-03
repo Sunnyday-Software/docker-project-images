@@ -189,6 +189,8 @@ fi
 mkdir -p "$HOME_DIR/.ssh" "$HOME_DIR/.config" "$HOME_DIR/.local/bin" "$HOME_DIR/.cache"
 chmod 700 "$HOME_DIR/.ssh" || true
 
+. ~/.bashrc.d/load.sh
+
 # Assicura che tutti i file nella home abbiano il proprietario corretto
 chown -R $USER:$GROUP "$HOME_DIR"
 
@@ -207,7 +209,7 @@ echo "👤 Switching to user: $USER"
 
 # gosu preserva le variabili d'ambiente e esegue come utente non privilegiato
 # Passa il controllo allo script non privilegiato
-exec gosu $USER bash -c '
+exec gosu "$USER" bash -c '
     export HOME="'"$HOME_DIR"'"
     # Cambia esplicitamente alla directory di lavoro
     cd /workdir

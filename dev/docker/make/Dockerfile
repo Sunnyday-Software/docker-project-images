@@ -3,7 +3,7 @@ ARG DOCKERHUB_USERNAME
 ARG BASH_CHECKSUM
 ARG PLATFORM_TAG
 
-ARG BASE_IMAGE=${DOCKERHUB_USERNAME}/bash:${BASH_CHECKSUM}-${PLATFORM_TAG}
+ARG BASE_IMAGE=k8s-home-sunnyday-software-bash
 
 FROM ${BASE_IMAGE}
 
@@ -11,10 +11,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG IMAGE_FULL_NAME="noname"
 
 ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
-
-# Usa Bash invece di sh per tutti i RUN
-SHELL ["/bin/bash", "-c"]
-
 
 LABEL \
     org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
@@ -51,9 +47,22 @@ RUN mkdir -p $HOME_DIR/.bashrc.d
 
 # Copy all .sh files from .bashrc.d to the .bashrc.d directory
 COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
+COPY root/.bashrc.d/*.sh /root/.bashrc.d/
 
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
+
+
+# Make sure all scripts are executable (forza conversione + fallback sed e verifica)
+RUN set -eux; \
+    echo "Normalizing shell scripts under /root/.bashrc.d"; \
+    find "/root/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
+    if grep -r $'\r' -n "/root/.bashrc.d"; then \
+      echo "CRLF still present, applying sed fallback"; \
+      while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
+    fi; \
+    if grep -r $'\r' -n "/root/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
 
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
