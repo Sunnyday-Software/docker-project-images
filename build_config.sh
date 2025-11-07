@@ -62,7 +62,7 @@ BUILD_ORDER=(
   IMAGE_BASH
   IMAGE_MAKE
   IMAGE_NODE_SEMANTIC_RELEASE
-  QUARKUS
+  IMAGE_QUARKUS
 )
 
 # Funzione per ottenere le informazioni di un'immagine
