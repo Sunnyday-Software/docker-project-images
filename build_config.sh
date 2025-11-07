@@ -47,11 +47,22 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
+declare -A IMAGE_QUARKUS=(
+  [name]="quarkus"
+  [platforms]="arm64,amd64"
+  [dockerfile]="dev/docker/quarkus/Dockerfile"
+  [context]="dev/docker/quarkus"
+  [depends_on]="bash"
+  [build_args]=""
+  [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
+)
+
 # Ordine di build delle immagini
 BUILD_ORDER=(
   IMAGE_BASH
   IMAGE_MAKE
-  IMAGE_NODE_SEMANTIC_RELEASE
+  IMAGE_NODE_SEMANTIC_RELEASE\
+  QUARKUS
 )
 
 # Funzione per ottenere le informazioni di un'immagine
