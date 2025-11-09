@@ -41,7 +41,7 @@ if command -v stat >/dev/null 2>&1; then
   SOCK_GID=$(stat -c '%g' "$SOCKET_PATH" 2>/dev/null || stat -f '%g' "$SOCKET_PATH" 2>/dev/null)
   echo "   UID: $SOCK_UID"
   echo "   GID: $SOCK_GID"
-  EXTRA_GID="$SOCK_GID,$EXTRA_GID"
+  DPM_USER_ADD_GID_S_LIST="$SOCK_GID,$DPM_USER_ADD_GID_S_LIST"
 fi
 echo
 
