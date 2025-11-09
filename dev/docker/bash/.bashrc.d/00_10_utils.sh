@@ -31,6 +31,6 @@ function run_script_if_available() {
     return
   fi
 
-  echo "Script non eseguito: script non trovato in ${script_path}" >&2
+  log_warn "Script non eseguito: script non trovato in ${script_path}"
 }
 

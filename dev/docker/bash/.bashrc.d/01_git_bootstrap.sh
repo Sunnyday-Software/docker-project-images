@@ -1,219 +1,59 @@
 #!/usr/bin/env bash
-# Scopo: configurare Git in modo non interattivo usando variabili d'ambiente.
-# Requisiti: git presente nel PATH.
-# Comportamento: se mancano GIT_HTTP_USER o GIT_HTTP_TOKEN, logga e termina senza errore.
-# Robustezza: stampa configurazione iniziale e calcolata; verifica permessi prima di creare/scrivere; evita cross-device link.
 
-# ========== UTILITIES ==========
-dbg()  {
-    if [[ "${GIT_DEBUG:-false}" == "true" ]]; then
-    echo "[git-bootstrap] $*" >&2;
-    fi
-}
-log()  { echo "[git-bootstrap] $*" >&2; }
-warn() { echo "[git-bootstrap][WARN] $*" >&2; }
-err()  { echo "[git-bootstrap][ERROR] $*" >&2; }
+# Scopo: inizializzare git nel container usando le variabili DPM_*.
+# Nota: NON crea/scrive credential store: le credenziali https vanno passate al momento del clone.
 
-print_fs_context() {
-  log "PWD: $(pwd)"
-  log "Listing here:"
-  ls -la || true
-  log "Listing /:"
-  ls -la / || true
-  for d in /workdir "${HOME:-/root}" "${XDG_CONFIG_HOME:-}" "$(dirname "${CRED_FILE:-/workdir/.git-credentials}")"; do
-    [ -n "$d" ] || continue
-    if [ -e "$d" ]; then
-      log "Listing $d:"
-      ls -la "$d" || true
-      df -h "$d" || true
-      stat "$d" || true
-    else
-      log "Path does not exist: $d"
-    fi
-  done
-}
-
-can_write_dir() {
-  local d="$1"
-  [ -d "$d" ] || return 1
-  [ -w "$d" ] || return 1
-  touch "$d/.writetest.$$" 2>/dev/null && rm -f "$d/.writetest.$$" 2>/dev/null
-}
-
-ensure_dir_writable() {
-  # Crea la dir se mancante; verifica scrivibilità; se non scrivibile stampa contesto e ritorna 1
-  local d="$1"
-  if [ ! -d "$d" ]; then
-    mkdir -p "$d" 2>/dev/null || {
-      warn "Impossibile creare directory: $d"
-      print_fs_context
-      return 1
-    }
-  fi
-  if ! can_write_dir "$d"; then
-    warn "Directory non scrivibile: $d"
-    print_fs_context
-    return 1
-  fi
-  return 0
-}
-
-# Evita esecuzione multipla nel profilo interattivo
+# se è già stato eseguito (sourced più volte) esci soft
 if [[ "${__GIT_BOOTSTRAP_DONE:-}" == "true" ]]; then
-  log "Già configurato, skip."
-  return 0
+  log_debug "git-bootstrap: già eseguito, skip."
+  return 0 2>/dev/null || exit 0
 fi
 
-# ========== CONFIGURAZIONE INIZIALE (INPUT) ==========
-# GIT_HTTP_USER: obbligatoria per HTTPS, username o 'x-access-token' per GitHub (se manca: uscita soft)
-dbg "Variabile: GIT_HTTP_USER - Necessaria per auth HTTPS; Obbligatoria: sì; Fonte: env; Default: n/d"
-dbg "Valore: ${GIT_HTTP_USER:-<unset>}"
+log_debug_section "git-bootstrap"
 
-# GIT_HTTP_TOKEN: obbligatoria per HTTPS, PAT GitHub (se manca: uscita soft)
-dbg "Variabile: GIT_HTTP_TOKEN - Necessaria per auth HTTPS; Obbligatoria: sì; Fonte: env; Default: n/d"
-dbg "Valore: ${GIT_HTTP_TOKEN:+***masked***}${GIT_HTTP_TOKEN:-<unset>:+}"
+# ===== INPUT ATTESI =====
+# identità
+GIT_NAME="${DPM_GIT_USER_NAME:-}"
+GIT_EMAIL="${DPM_GIT_USER_EMAIL:-}"
 
-# GIT_HTTP_HOST: host Git (default github.com)
-dbg "Variabile: GIT_HTTP_HOST - Host Git; Obbligatoria: no; Fonte: env; Default: github.com"
-dbg "Valore: ${GIT_HTTP_HOST:-<default>}"
+# host git per eventuale conversione ssh → https
+GIT_HOST="${DPM_GIT_HTTP_HOST:-github.com}"
 
-# CRED_FILE: path file credenziali git-credential-store
-dbg "Variabile: CRED_FILE - File credenziali; Obbligatoria: no; Fonte: env; Default: /workdir/.git-credentials"
-dbg "Valore: ${CRED_FILE:-/workdir/.git-credentials}"
-
-# XDG_CONFIG_HOME: base config (se assente calcoliamo fallback su /workdir)
-dbg "Variabile: XDG_CONFIG_HOME - Base config; Obbligatoria: no; Fonte: env; Default: <calcolato>"
-
-# HOME: usato da git se non sovrascritto (potremmo ricalcolarlo)
-dbg "Variabile: HOME - Home utente; Obbligatoria: no; Fonte: ambiente container"
-dbg "Valore: ${HOME:-<unset>}"
-
-# CI: indicatore ambiente CI
-dbg "Variabile: CI - Contesto CI; Obbligatoria: no; Fonte: env; Default: false"
-dbg "Valore: ${CI:-false}"
-
-# Se mancano le variabili obbligatorie, uscita soft
-if [ -z "${GIT_HTTP_USER:-}" ]; then
-  warn "GIT_HTTP_USER non impostata: esco senza configurare git."
-  export __GIT_BOOTSTRAP_DONE=true
-  return 0
-fi
-if [ -z "${GIT_HTTP_TOKEN:-}" ]; then
-  warn "GIT_HTTP_TOKEN non impostata: esco senza configurare git."
-  export __GIT_BOOTSTRAP_DONE=true
-  return 0
-fi
-
-# ========== CALCOLI DERIVATI ==========
-SAFE_HOME="${HOME:-${HOME_DIR:-/home/${USER}}}"
+# base config
+SAFE_HOME="${HOME:-/root}"
 CONFIG_HOME="${XDG_CONFIG_HOME:-${SAFE_HOME}/.config}"
-TMPDIR_CALC="${SAFE_HOME}/.cache/tmp"
 
-GIT_GLOBAL_CONFIG="${CONFIG_HOME}/git/config"
-CRED_FILE="${CRED_FILE:-${SAFE_HOME}/.git-credentials}"
+log_debug_env_var DPM_GIT_USER_NAME
+log_debug_env_var DPM_GIT_USER_EMAIL
+log_debug_env_var DPM_GIT_HTTP_HOST
 
-GITHUB_HOST="${GIT_HTTP_HOST:-github.com}"
+# crea la dir config (soft)
+mkdir -p "${CONFIG_HOME}/git" 2>/dev/null || true
 
-# Token sanitizzato
-token="${GIT_HTTP_TOKEN%$'\n'}"; token="${token%$'\r'}"
-
-# Stampa variabili calcolate
-dbg "Calcolata: GITHUB_HOST - Host usato per remoti HTTPS; Default: github.com"
-dbg "Valore: ${GITHUB_HOST}"
-
-dbg "Calcolata: CONFIG_HOME - Base config effettiva; Default: \$RUNTIME_BASE"
-dbg "Valore: ${CONFIG_HOME}"
-
-dbg "Calcolata: SAFE_HOME - HOME effettiva per operazioni git; Default: \$RUNTIME_BASE/home"
-dbg "Valore: ${SAFE_HOME}"
-
-dbg "Calcolata: TMPDIR - Temporary directory per operazioni atomiche git; Default: \$CONFIG_HOME/.tmp"
-dbg "Valore: ${TMPDIR_CALC}"
-
-dbg "Calcolata: GIT_GLOBAL_CONFIG - Percorso config globale; Default: \$CONFIG_HOME/git/config"
-dbg "Valore: ${GIT_GLOBAL_CONFIG}"
-
-dbg "Calcolata: CRED_FILE - File credenziali git; Default: /workdir/.git-credentials"
-dbg "Valore: ${CRED_FILE}"
-
-# Verifica CONFIG_HOME, SAFE_HOME, TMPDIR e dir credenziali
-ensure_dir_writable "$SAFE_HOME"       || { warn "SAFE_HOME non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
-ensure_dir_writable "$CONFIG_HOME"     || { warn "CONFIG_HOME non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
-ensure_dir_writable "$(dirname "$GIT_GLOBAL_CONFIG")" || { warn "Dir config git non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
-ensure_dir_writable "$TMPDIR_CALC"     || { warn "TMPDIR non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
-ensure_dir_writable "$(dirname "$CRED_FILE")" || { warn "Dir credenziali non scrivibile"; export __GIT_BOOTSTRAP_DONE=true; return 0; }
-
-# ========== EXPORT AMBIENTE PER GIT ==========
-export HOME="${SAFE_HOME}"
-export XDG_CONFIG_HOME="${CONFIG_HOME}"
-export TMPDIR="${TMPDIR_CALC}"
-export GIT_CONFIG_GLOBAL="${GIT_GLOBAL_CONFIG}"
-export GIT_TERMINAL_PROMPT=0
-
-# ========== CONFIGURAZIONE GIT ==========
-# Inizializza il file di config se non esiste
-if [ ! -f "$GIT_CONFIG_GLOBAL" ]; then
-  : > "$GIT_CONFIG_GLOBAL" 2>/dev/null || {
-    warn "Impossibile creare $GIT_CONFIG_GLOBAL"
-    print_fs_context
-    export __GIT_BOOTSTRAP_DONE=true
-    return 0
-  }
+# ===== CONFIG GIT DI BASE =====
+if [[ -n "$GIT_NAME" ]]; then
+  git config --global user.name "$GIT_NAME" 2>/dev/null || log_warn "git: impossibile impostare user.name"
+fi
+if [[ -n "$GIT_EMAIL" ]]; then
+  git config --global user.email "$GIT_EMAIL" 2>/dev/null || log_warn "git: impossibile impostare user.email"
 fi
 
-# Imposta config globale (fallimento soft con log)
-git config --global --unset-all credential.helper 2>/dev/null || true
-git config --global credential.helper "store --file=${CRED_FILE}" 2>/dev/null || warn "credential.helper non impostato"
-git config --global credential.useHttpPath false 2>/dev/null || true
-git config --global url."https://${GITHUB_HOST}/".insteadOf "git@${GITHUB_HOST}:" 2>/dev/null || warn "url.insteadOf non impostato"
-git config --global user.name  "${GIT_USER_NAME:-${GITHUB_ACTOR:-ci-bot}}" 2>/dev/null || warn "user.name non impostato"
-git config --global user.email "${GIT_USER_EMAIL:-${GITHUB_ACTOR:-ci-bot}}@users.noreply.github.com" 2>/dev/null || warn "user.email non impostato"
-git config --global commit.gpgsign false 2>/dev/null || true
-
+# aggiungi /workdir come safe.directory (tutti i progetti sono lì)
 if ! git config --global --get-all safe.directory | grep -q "^/workdir$"; then
   git config --global --add safe.directory /workdir 2>/dev/null || true
 fi
 
-# ========== CREDENZIALI ==========
-umask 077
-# Verifica scrittura credenziali
-if ! can_write_dir "$(dirname "$CRED_FILE")"; then
-  warn "Directory credenziali non scrivibile: $(dirname "$CRED_FILE")"
-  print_fs_context
-  export __GIT_BOOTSTRAP_DONE=true
-  return 0
-fi
-
-printf "https://%s:%s@%s\n" "${GIT_HTTP_USER}" "${token}" "${GITHUB_HOST}" > "${CRED_FILE}" 2>/dev/null || {
-  warn "Impossibile scrivere il file credenziali: ${CRED_FILE}"
-  print_fs_context
-  export __GIT_BOOTSTRAP_DONE=true
-  return 0
-}
-chmod 600 "${CRED_FILE}" 2>/dev/null || true
-
-# ========== REMOTE ORIGIN (OPZIONALE) ==========
+# ===== CONVERSIONE REMOTE ORIGIN (ssh → https) =====
 if git -C /workdir rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  url="$(git -C /workdir remote get-url origin 2>/dev/null || true)"
-  if [ -n "${url}" ] && printf '%s' "${url}" | grep -q '^git@' ; then
-    https_url="$(printf '%s' "${url}" | sed "s#^git@${GITHUB_HOST}:#https://${GITHUB_HOST}/#")"
-    git -C /workdir remote set-url origin "${https_url}" 2>/dev/null || warn "Impossibile aggiornare origin a HTTPS"
-    log "Origin convertito a HTTPS: ${https_url}"
+  current_url="$(git -C /workdir remote get-url origin 2>/dev/null || true)"
+  if [[ -n "$current_url" && "$current_url" == git@"$GIT_HOST":* ]]; then
+    https_url="${current_url/git@${GIT_HOST}:/https://${GIT_HOST}/}"
+    git -C /workdir remote set-url origin "$https_url" 2>/dev/null \
+      && log_info "git: origin convertito a HTTPS: $https_url" \
+      || log_warn "git: impossibile aggiornare origin a HTTPS"
   fi
 fi
 
-# ========== DEBUG ==========
-log "=== DEBUG CONFIGURAZIONE (safe) ==="
-log "Descrizione: HOME effettiva usata per git (stesso FS di /workdir per evitare cross-device link)"
-log "HOME=${HOME}"
-log "Descrizione: Base config (XDG) usata per git"
-log "XDG_CONFIG_HOME=${XDG_CONFIG_HOME}"
-log "Descrizione: File di config globale git"
-log "GIT_CONFIG_GLOBAL=${GIT_CONFIG_GLOBAL}"
-log "Descrizione: File credenziali git-credential-store"
-log "CRED_FILE=${CRED_FILE}"
-git config --list --show-origin 2>/dev/null | grep -E 'credential|user\.|url\.|safe\.directory' || true
-log "==============================="
-
+log_info "git-bootstrap: configurazione base completata (senza credential store)"
 export __GIT_BOOTSTRAP_DONE=true
-log "✅ Configurazione Git completata (soft-fail abilitato dove necessario)"
+log_end_section

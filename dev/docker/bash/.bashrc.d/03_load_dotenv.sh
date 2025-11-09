@@ -5,7 +5,7 @@ set -e
 
 # Funzione per caricare file .env in modo sicuro
 function load_dotenv() {
-    local env_file="${1:-/workdir/.env}"
+    local env_file="${1:-${DPM_PROJECT_ROOT}/.env}"
 
     if [ -f "$env_file" ]; then
         echo "🔧 Caricando variabili d'ambiente da: $env_file"

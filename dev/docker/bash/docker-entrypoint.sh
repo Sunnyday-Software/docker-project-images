@@ -32,10 +32,10 @@ log_and_execute() {
 
 # Funzione per gestire i gruppi extra
 setup_extra_groups() {
-  local extra_gids="${EXTRA_GID:-}"
+  local extra_gids="${DPM_USER_ADD_GID_S_LIST:-}"
 
   if [ -z "$extra_gids" ]; then
-    echo "ℹ️  Nessun gruppo extra da configurare (EXTRA_GID non impostato)"
+    echo "ℹ️  Nessun gruppo extra da configurare (DPM_USER_ADD_GID_S_LIST non impostato)"
     return 0
   fi
 
@@ -212,7 +212,7 @@ echo "👤 Switching to user: $USER"
 exec gosu "$USER" bash -c '
     export HOME="'"$HOME_DIR"'"
     # Cambia esplicitamente alla directory di lavoro
-    cd /workdir
+    cd ${DPM_PROJECT_ROOT}
 
     echo "👤 Now running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
     echo "🏠 HOME is now: $HOME"
