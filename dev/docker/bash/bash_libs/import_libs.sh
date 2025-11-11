@@ -10,3 +10,6 @@ source "$BASH_LIBS/emoji.sh"
 source "$BASH_LIBS/env.sh"
 source "$BASH_LIBS/logging.sh"
 source "$BASH_LIBS/utils.sh"
+
+
+log_enable_debug "${DPM_DEBUG:-0}"
