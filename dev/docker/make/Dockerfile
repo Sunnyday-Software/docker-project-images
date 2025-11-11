@@ -46,8 +46,8 @@ RUN git config --global --add safe.directory /workdir
 RUN mkdir -p $HOME_DIR/.bashrc.d
 
 # Copy all .sh files from .bashrc.d to the .bashrc.d directory
-COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
-COPY root/.bashrc.d/*.sh /root/.bashrc.d/
+COPY .bashrc.d/ $HOME_DIR/.bashrc.d/
+COPY root/.bashrc.d/ /root/.bashrc.d/
 
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
