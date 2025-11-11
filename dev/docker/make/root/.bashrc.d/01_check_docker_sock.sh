@@ -15,7 +15,6 @@ if log_is_debug_enabled; then
     log_debug "   ✓ Socket exists"
   else
     log_debug "   ✗ Socket NOT found"
-    exit 1
   fi
 
 
@@ -26,7 +25,6 @@ if log_is_debug_enabled; then
     log_debug "   ✓ Is a socket"
   else
     log_debug "   ✗ NOT a socket!"
-    exit 1
   fi
   echo
 
