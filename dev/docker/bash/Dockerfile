@@ -77,6 +77,10 @@ RUN mkdir -p $HOME_DIR/.bashrc.d
 # Copy all .sh files from .bashrc.d to the .bashrc.d directory
 COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
 COPY root/.bashrc.d/*.sh /root/.bashrc.d/
+# libs comuni
+RUN mkdir -p /opt/bash_libs
+COPY bash_libs /opt/bash_libs
+RUN chmod -R 755 /opt/bash_libs
 
 # Create a script that sources the .bashrc.d directory
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc

@@ -2,32 +2,10 @@
 
 # https://github.com/Yelp/dumb-init
 
+: "${DPM_DEBUG:=0}"
 
-# Error handling trap
-error_handler() {
-  local line=$1
-  local command=$2
-  local code=$3
-  echo "--------------------------------------------------------------------------------"
-  echo "❌ Error in $(basename "$0") at line $line"
-  echo "❌ Command: $command"
-  echo "❌ Expanded command: $(eval echo "$command" 2>/dev/null || echo "Could not expand command")"
-  echo "❌ Exit code: $code"
-  exit $code
-}
-
-# Funzione per loggare ed eseguire comandi
-log_and_execute() {
-    echo "🔍 [$(date '+%Y-%m-%d %H:%M:%S')] Executing: $*" >&2
-    "$@"
-    local exit_code=$?
-    if [ $exit_code -eq 0 ]; then
-        echo "✅ [$(date '+%Y-%m-%d %H:%M:%S')] Command succeeded" >&2
-    else
-        echo "❌ [$(date '+%Y-%m-%d %H:%M:%S')] Command failed with exit code: $exit_code" >&2
-    fi
-    return $exit_code
-}
+source "/opt/bash_libs/import_libs.sh"
+log_enable_debug "${DPM_DEBUG}"
 
 
 # Funzione per gestire i gruppi extra
@@ -35,11 +13,11 @@ setup_extra_groups() {
   local extra_gids="${DPM_USER_ADD_GID_S_LIST:-}"
 
   if [ -z "$extra_gids" ]; then
-    echo "ℹ️  Nessun gruppo extra da configurare (DPM_USER_ADD_GID_S_LIST non impostato)"
+    log_debug "ℹ️  Nessun gruppo extra da configurare (DPM_USER_ADD_GID_S_LIST non impostato)"
     return 0
   fi
 
-  echo "🔧 Configurazione gruppi extra per $USER..."
+  log_debug "🔧 Configurazione gruppi extra per $USER..."
 
   # Split per virgola o spazio
   IFS=',' read -ra GIDS <<< "$extra_gids"
@@ -50,7 +28,7 @@ setup_extra_groups() {
 
     # Verifica che sia un numero
     if ! [[ "$gid" =~ ^[0-9]+$ ]]; then
-      echo "⚠️  Warning: GID '$gid' non valido, ignorato"
+      log_debug "⚠️  Warning: GID '$gid' non valido, ignorato"
       continue
     fi
 
@@ -58,42 +36,35 @@ setup_extra_groups() {
     existing_group=$(getent group "$gid" | cut -d: -f1 || echo "")
 
     if [ -n "$existing_group" ]; then
-      echo "  ➤ Gruppo esistente trovato: $existing_group (GID: $gid)"
+      log_debug "  ➤ Gruppo esistente trovato: $existing_group (GID: $gid)"
       group_name="$existing_group"
     else
       # Crea un gruppo fittizio con quel GID
       group_name="hostgid_${gid}"
-      echo "  ➤ Creazione gruppo fittizio: $group_name (GID: $gid)"
+      log_debug "  ➤ Creazione gruppo fittizio: $group_name (GID: $gid)"
 
       if groupadd -g "$gid" "$group_name" 2>/dev/null; then
-        echo "    ✅ Gruppo $group_name creato"
+        log_debug "    ✅ Gruppo $group_name creato"
       else
-        echo "    ⚠️  Impossibile creare gruppo con GID $gid, ignorato"
+        log_debug "    ⚠️  Impossibile creare gruppo con GID $gid, ignorato"
         continue
       fi
     fi
 
     # Aggiungi l'utente al gruppo
     if usermod -aG "$group_name" "$USER" 2>/dev/null; then
-      echo "    ✅ Utente $USER aggiunto al gruppo $group_name (GID: $gid)"
+      log_debug "    ✅ Utente $USER aggiunto al gruppo $group_name (GID: $gid)"
     else
-      echo "    ⚠️  Impossibile aggiungere $USER al gruppo $group_name"
+      log_debug "    ⚠️  Impossibile aggiungere $USER al gruppo $group_name"
     fi
   done
 
-  echo "✅ Configurazione gruppi extra completata"
-  echo "📋 Gruppi dell'utente $USER: $(id -Gn $USER)"
+  log_debug "✅ Configurazione gruppi extra completata"
+  log_debug "📋 Gruppi dell'utente $USER: $(id -Gn $USER)"
 }
 
-# Set up the trap to catch errors
-trap 'error_handler ${LINENO} "$BASH_COMMAND" $?' ERR
 
-set -e
 
-echo "🔐 Running as root: $(whoami)"
-echo "🏠 HOME_DIR is set to: $HOME_DIR"
-echo "🏠 Current HOME is: $HOME"
-echo "📂 Current working directory: $(pwd)"
 
 # ========================================
 # OPERAZIONI PRIVILEGIATE (come root)
@@ -102,11 +73,16 @@ echo "📂 Current working directory: $(pwd)"
 # Legge la versione corrente dell'immagine
 if [ -f /etc/image-info ]; then
     source /etc/image-info
-    echo "📦 Current image version: $IMAGE_FULL_NAME"
 else
-    echo "⚠️  Warning: /etc/image-info not found"
+    log_warn "⚠️  Warning: /etc/image-info not found"
     IMAGE_FULL_NAME="unknown"
 fi
+
+log_debug_section "${IMAGE_FULL_NAME:-unknown image}"
+log_debug "🔐 Running as root: $(whoami)"
+log_debug "🏠 HOME_DIR (user home folder) is set to: $HOME_DIR"
+log_debug "🏠 Current HOME is: $HOME"
+log_debug "📂 Current working directory: $(pwd)"
 
 # File marker della versione nella home dell'utente
 HOME_VERSION_FILE="$HOME_DIR/.image-version"
@@ -115,28 +91,28 @@ HOME_VERSION_FILE="$HOME_DIR/.image-version"
 NEEDS_UPDATE=false
 
 if [ ! -f "$HOME_DIR/.bashrc" ] || [ ! -d "$HOME_DIR/.bashrc.d" ]; then
-    echo "🏠 Home directory not initialized"
+    log_debug "🏠 Home directory not initialized"
     NEEDS_UPDATE=true
 elif [ ! -f "$HOME_VERSION_FILE" ]; then
-    echo "⚠️  Home version file not found"
+    log_debug "⚠️  Home version file not found"
     NEEDS_UPDATE=true
 else
     INSTALLED_VERSION=$(cat "$HOME_VERSION_FILE")
-    echo "📦 Installed home version: $INSTALLED_VERSION"
+    log_debug "📦 Installed home version: $INSTALLED_VERSION"
 
     if [ "$INSTALLED_VERSION" != "$IMAGE_FULL_NAME" ]; then
-        echo "🔄 Home directory version mismatch - update needed"
-        echo "   From: $INSTALLED_VERSION"
-        echo "   To:   $IMAGE_FULL_NAME"
+        log_debug "🔄 Home directory version mismatch - update needed"
+        log_debug "   From: $INSTALLED_VERSION"
+        log_debug "   To:   $IMAGE_FULL_NAME"
         NEEDS_UPDATE=true
     else
-        echo "✅ Home directory is up to date"
+        log_debug "✅ Home directory is up to date"
     fi
 fi
 
 # Aggiorna la home se necessario
 if [ "$NEEDS_UPDATE" = true ]; then
-    echo "🔄 Updating home directory from template..."
+    log_debug "🔄 Updating home directory from template..."
 
     # Backup dei file utente importanti se esistono
     BACKUP_DIRS=(".ssh" ".config" ".cache")
@@ -153,18 +129,18 @@ if [ "$NEEDS_UPDATE" = true ]; then
     fi
 
     # Rimuove i file template vecchi (ma preserva i backup)
-    echo "🧹 Cleaning old template files..."
+    log_debug "🧹 Cleaning old template files..."
     find "$HOME_DIR" -mindepth 1 -maxdepth 1 ! -name '.ssh' ! -name '.config' ! -name '.cache' -exec rm -rf {} + 2>/dev/null || true
 
     # Copia il nuovo template
-    echo "📋 Copying new template..."
+    log_debug "📋 Copying new template..."
     cp -a /opt/home-template/. "$HOME_DIR/"
 
     # Ripristina i backup
     if [ -d "$TEMP_BACKUP" ]; then
         for dir in "${BACKUP_DIRS[@]}"; do
             if [ -d "$TEMP_BACKUP/$dir" ]; then
-                echo "♻️  Restoring $dir"
+                log_debug "♻️  Restoring $dir"
                 cp -an "$TEMP_BACKUP/$dir/." "$HOME_DIR/$dir/" 2>/dev/null || true
             fi
         done
@@ -174,13 +150,13 @@ if [ "$NEEDS_UPDATE" = true ]; then
     # Salva la versione corrente
     echo "$IMAGE_FULL_NAME" > "$HOME_VERSION_FILE"
 
-    echo "✅ Home directory updated to version: $IMAGE_FULL_NAME"
+    log_debug "✅ Home directory updated to version: $IMAGE_FULL_NAME"
 
     # Debug: mostra cosa è stato copiato
     if [ "${DEBUG:-false}" = "true" ]; then
-        echo "📂 Home directory contents:"
+        log_debug "📂 Home directory contents:"
         ls -la "$HOME_DIR"
-        echo "📂 .bashrc.d contents:"
+        log_debug "📂 .bashrc.d contents:"
         ls -la "$HOME_DIR/.bashrc.d"
     fi
 fi
@@ -199,13 +175,14 @@ setup_extra_groups
 # Prevent core dumps
 ulimit -c 0
 
-echo "✅ Privileged operations completed"
+log_debug "✅ Privileged operations completed"
+log_end_section
 
 # ========================================
 # CAMBIO UTENTE (preservando l'ambiente)
 # ========================================
 
-echo "👤 Switching to user: $USER"
+log_debug_section "👤 Switching to user: $USER"
 
 # gosu preserva le variabili d'ambiente e esegue come utente non privilegiato
 # Passa il controllo allo script non privilegiato

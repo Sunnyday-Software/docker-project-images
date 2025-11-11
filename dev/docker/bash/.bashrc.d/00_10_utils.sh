@@ -1,5 +1,10 @@
 #!/bin/bash
 
+source "/opt/bash_libs/import_libs.sh"
+BRC_UTILS_SH_S_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+lib_guard "BRC_UTILS_SH_S_DIR" || { return 0 2>/dev/null || exit 0; }
+
+
 # Esegue uno script se esiste ed è accessibile.
 #
 # Questa funzione verifica l'esistenza e l'eseguibilità di uno script al percorso specificato.
@@ -31,6 +36,6 @@ function run_script_if_available() {
     return
   fi
 
-  log_warn "Script non eseguito: script non trovato in ${script_path}"
+  log_err "Script non eseguito: script non trovato in ${script_path}"
 }
 
