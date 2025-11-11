@@ -2,7 +2,7 @@
 
 # Library guard: if this library has already been sourced, stop here without error.
 # Use 'return' when sourced/in a function; fall back to 'exit' when executed as a script.
-if [[ -n "${__LIB_GUARD_CHECK_LIBS_SH}" ]]; then
+if [[ -n "${__LIB_GUARD_CHECK_LIBS_SH:-}" ]]; then
     return 0 2>/dev/null || exit 0
 fi
 

@@ -9,13 +9,13 @@ source /etc/image-info
 set +a
 
 # Informazioni minime (no variabili d'ambiente per evitare leak di segreti)
-log_debug "------- INFORMATION --------"
-log_debug "Image: ${IMAGE_FULL_NAME}"
-log_debug "User: $(whoami) ($(id -u)/$(id -g))"
-log_debug "Time: $(date)"
-log_debug "Bash: $BASH_VERSION"
-log_debug "CWD: $(pwd)"
-log_debug "Host: $(hostname)"
-log_debug "OS: $(uname -srm)"
-log_debug "params: $@"
-log_debug "----------------------------"
+log_info "------- Current runtime --------"
+log_info "Image: ${IMAGE_FULL_NAME}"
+log_info "User: $(whoami) ($(id -u)/$(id -g))"
+log_info "Time: $(date)"
+log_info "Bash: $BASH_VERSION"
+log_info "CWD: $(pwd)"
+log_info "Host: $(hostname)"
+log_info "OS: $(uname -srm)"
+log_info "params: $*"
+log_info "---------------------------------"
