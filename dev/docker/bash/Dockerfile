@@ -70,6 +70,11 @@ SHELL ["/bin/bash", "-c"]
 
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
+RUN mkdir -p /opt/overrides/user_home
+VOLUME /opt/overrides/user_home
+
+RUN mkdir -p /opt/overrides/root_home
+VOLUME /opt/overrides/root_home
 
 # Create the .bashrc.d directory for the user (root by default in Docker)
 RUN mkdir -p $HOME_DIR/.bashrc.d

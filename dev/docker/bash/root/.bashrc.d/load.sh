@@ -13,7 +13,7 @@ for file in ~/.bashrc.d/*.sh; do
   fi
   if [ -f "$file" ]; then
     log_debug "📚 ...loading library $file"
-    . "$file"
+    source "$file"
   fi
 done
 

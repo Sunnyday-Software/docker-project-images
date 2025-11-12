@@ -161,9 +161,28 @@ if [ "$NEEDS_UPDATE" = true ]; then
     fi
 fi
 
+# Applica override user_home ad ogni avvio (se presenti)
+if [ -d "/opt/overrides/user_home/$USER" ]; then
+  log_debug "🟪 Applying overrides from /opt/overrides/user_home/$USER to $HOME_DIR"
+  # Copia sovrascrivendo, preserva permessi/attributi quando possibile
+  cp -a "/opt/overrides/user_home/$USER/." "$HOME_DIR/" 2>/dev/null || cp -r "/opt/overrides/user_home/$USER/." "$HOME_DIR/" || true
+else
+  log_debug "ℹ️  No overrides directory at /opt/overrides/user_home/$USER"
+fi
+
 # Crea directory standard se non esistono
 mkdir -p "$HOME_DIR/.ssh" "$HOME_DIR/.config" "$HOME_DIR/.local/bin" "$HOME_DIR/.cache"
 chmod 700 "$HOME_DIR/.ssh" || true
+
+# Applica override root_home ad ogni avvio (se presenti)
+if [ -d /opt/overrides/root_home ]; then
+  log_debug "🟥 Applying overrides from /opt/overrides/root_home to /root"
+  cp -a /opt/overrides/root_home/. /root/ 2>/dev/null || cp -r /opt/overrides/root_home/. /root/ || true
+  # Normalizza permessi minimi di sicurezza comuni (opzionale)
+  [ -d /root/.ssh ] && chmod 700 /root/.ssh || true
+else
+  log_debug "ℹ️  No overrides directory at /opt/overrides/root_home"
+fi
 
 . ~/.bashrc.d/load.sh
 
