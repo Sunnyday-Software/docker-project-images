@@ -12,7 +12,7 @@ if log_is_debug_enabled; then
 
 
     # 1. Verifica esistenza socket
-    SOCKET_PATH="$DPM_DOCKER_SOCKET"
+    SOCKET_PATH="/var/run/docker.sock"
     log_debug "1. Verifica esistenza socket: $SOCKET_PATH"
     if [ -e "$SOCKET_PATH" ]; then
       log_debug "   ✓ Socket exists"
