@@ -56,7 +56,7 @@ ENV GRAALVM_HOME="$SDKMAN_DIR/candidates/java/$GRAAL_VERSION"
 RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java $GRAAL_VERSION"
 
 ENV PATH="$SDKMAN_DIR/candidates/maven/$MAVEN_VERSION/bin:$PATH"
-ENV MAVEN_OPTS="-Duser.home=/workdir/.runtime/user_home"
+
 RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install maven $MAVEN_VERSION"
 
 RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install quarkus"

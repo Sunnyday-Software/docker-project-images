@@ -7,59 +7,48 @@ BRC_DOCKER_ENTRYPOINT_TMUX_SH_S_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 lib_guard "BRC_DOCKER_ENTRYPOINT_TMUX_SH_S_DIR" || { return 0 2>/dev/null || exit 0; }
 
 
+# Avvia o riutilizza una sessione tmux per eseguire il comando passato.
+# Variabili:
+#   TMUX_SESSION_NAME: nome della sessione (default: dev)
+#   TMUX_WINDOW_NAME:  nome della window (default: main)
+#   TMUX_DETACH:       se "true", stacca subito dopo l’avvio (default: true)
+
 function docker_entrypoint_tmux {
-  # Avvia o riutilizza una sessione tmux per eseguire il comando passato.
-  # Variabili:
-  #   TMUX_SESSION_NAME: nome della sessione (default: dev)
-  #   TMUX_WINDOW_NAME:  nome della window (default: main)
-  #   TMUX_DETACH:       se "true", stacca subito dopo l’avvio (default: true)
 
-  local session_name="${TMUX_SESSION_NAME:-dev}"
-  local window_name="${TMUX_WINDOW_NAME:-main}"
-  local detach="${TMUX_DETACH:-true}"
+    local S="${TMUX_SESSION_NAME:-dev}"
+    local W="${TMUX_WINDOW_NAME:-main}"
+    local SOCKET="${TMUX_SOCKET_NAME:-dpm}"
+    local DETACH="${TMUX_DETACH:-true}"
+    local cmd=("$@")
+    # Se non c'è comando, apri shell di login
+    if [ ${#cmd[@]} -eq 0 ]; then
+        cmd=(bash -l)
+    fi
 
-  # Assicura che tmux sia disponibile
-  if ! command -v tmux >/dev/null 2>&1; then
-    log_err "Errore: tmux non trovato nel PATH." >&2
-    return 127
-  fi
+    # Non ereditare un TMUX esterno
+    unset TMUX
 
-  # Crea la sessione se non esiste
-  if ! tmux has-session -t "${session_name}" 2>/dev/null; then
-    tmux new-session -d -s "${session_name}" -n "${window_name}"
-  fi
+    # Avvia una sessione con il comando come *programma* della window
+    # NB: "exec" rimpiazza la shell della window con il tuo comando
+    tmux -L "$SOCKET" new-session -d -s "$S" -n "$W" "exec $(printf '%q ' "${cmd[@]}")"
 
-  # Se la window esiste già, usala; altrimenti creala
-  if ! tmux list-windows -t "${session_name}" -F '#W' 2>/dev/null | grep -qx "${window_name}"; then
-    tmux new-window -t "${session_name}" -n "${window_name}"
-  fi
+    # Opzioni: chiudi server quando non ci sono sessioni; non lasciare window in remain-on-exit
+    tmux -L "$SOCKET" set -g exit-empty on   >/dev/null 2>&1 || true
+    tmux -L "$SOCKET" setw -t "$S:$W" remain-on-exit off >/dev/null 2>&1 || true
 
-  # Invia il comando alla window specificata
-  local cmd=("$@")
-  if [ ${#cmd[@]} -eq 0 ]; then
-    log_debug "Nessun comando specificato. Avvio shell interattiva nella sessione tmux '${session_name}'." >&2
-    cmd=("bash" "-l")
-  fi
+    if [ "$DETACH" = "false" ]; then
+        exec tmux -L "$SOCKET" attach -t "$S"
+    fi
 
-  # Pulisce eventuale job precedente lasciando il prompt pronto
-  tmux send-keys -t "${session_name}:${window_name}" C-c
+    # 👉 stampa i comandi utili per collegarti
+    local attach_in="tmux -L ${SOCKET} attach -t ${S}"
+    log_info "Per collegarti alla sessione tmux:"
+    log_info "  • dentro al container: ${attach_in}"
+    if [ -n "${DPM_RUN_IMAGE:-}" ]; then
+        log_info "  • dall'host con Docker Compose:"
+        log_info "    docker compose exec ${DPM_RUN_IMAGE} ${attach_in}"
+    fi
 
-  # Invia il comando e un invio finale
-  tmux send-keys -t "${session_name}:${window_name}" "$(printf '%q ' "${cmd[@]}")" C-m
-
-  # Se richiesto, attacca in foreground così il processo PID 1 resta vivo
-  if [ "${detach}" = "false" ]; then
-    exec tmux attach -t "${session_name}"
-  fi
-
-  # Modalità detach: lascia la sessione viva e non chiudere subito la funzione
-  # Rimani in attesa finché la sessione esiste, così il container non esce
-  log_info "Comando inviato alla sessione tmux '${session_name}'."
-  log_info "Per collegarti: tmux attach -t ${session_name}"
-  while tmux has-session -t "${session_name}" 2>/dev/null; do
-    sleep 2
-  done
-
-  # Se la sessione termina, esci
-  return 0
+    # Tieni vivo il container finché esiste la sessione
+    while tmux -L "$SOCKET" has-session -t "$S" 2>/dev/null; do sleep 1; done
 }

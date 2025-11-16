@@ -217,7 +217,7 @@ exec gosu "$USER" bash -c '
     # Esegue il comando finale
     . ~/.bashrc.d/load.sh
 
-    if [ -n "${USE_TMUX:-}" ]; then
+    if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
       docker_entrypoint_tmux "$@"
     else
       docker_entrypoint_common "$@"
