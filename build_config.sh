@@ -47,6 +47,16 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
+declare -A IMAGE_DEVTOOLS_JDK_21_NODE_24=(
+  [name]="devtools-jdk21-nodejs24"
+  [platforms]="arm64,amd64"
+  [dockerfile]="dev/docker/devtools-jdk21-nodejs24/Dockerfile"
+  [context]="dev/docker/devtools-jdk21-nodejs24"
+  [depends_on]="bash"
+  [build_args]=""
+  [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
+)
+
 declare -A IMAGE_QUARKUS=(
   [name]="quarkus"
   [platforms]="arm64,amd64"
@@ -57,12 +67,24 @@ declare -A IMAGE_QUARKUS=(
   [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
+declare -A IMAGE_QUARKUS_21=(
+  [name]="quarkus-21"
+  [platforms]="arm64,amd64"
+  [dockerfile]="dev/docker/quarkus-jdk21/Dockerfile"
+  [context]="dev/docker/quarkus-jdk21"
+  [depends_on]="bash"
+  [build_args]=""
+  [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
+)
+
 # Ordine di build delle immagini
 BUILD_ORDER=(
   IMAGE_BASH
   IMAGE_MAKE
+  IMAGE_DEVTOOLS_JDK_21_NODE_24
   IMAGE_NODE_SEMANTIC_RELEASE
   IMAGE_QUARKUS
+  IMAGE_QUARKUS_21
 )
 
 # Funzione per ottenere le informazioni di un'immagine
