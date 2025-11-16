@@ -67,8 +67,8 @@ declare -A IMAGE_QUARKUS=(
   [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
-declare -A IMAGE_QUARKUS_21=(
-  [name]="quarkus-21"
+declare -A IMAGE_QUARKUS_JDK21=(
+  [name]="quarkus-jdk21"
   [platforms]="arm64,amd64"
   [dockerfile]="dev/docker/quarkus-jdk21/Dockerfile"
   [context]="dev/docker/quarkus-jdk21"
@@ -84,7 +84,7 @@ BUILD_ORDER=(
   IMAGE_DEVTOOLS_JDK_21_NODE_24
   IMAGE_NODE_SEMANTIC_RELEASE
   IMAGE_QUARKUS
-  IMAGE_QUARKUS_21
+  IMAGE_QUARKUS_JDK21
 )
 
 # Funzione per ottenere le informazioni di un'immagine
