@@ -203,26 +203,48 @@ log_end_section
 
 log_debug_section "👤 Switching to user: $USER"
 
-# gosu preserva le variabili d'ambiente e esegue come utente non privilegiato
-# Passa il controllo allo script non privilegiato
-exec gosu "$USER" bash -c '
-    export HOME="'"$HOME_DIR"'"
-    # Cambia esplicitamente alla directory di lavoro
-    cd ${DPM_PROJECT_ROOT}
+if command -v gosu >/dev/null 2>&1 && gosu "$USER" id -u >/dev/null 2>&1; then
+  log_debug "✅ gosu disponibile, eseguo come utente $USER"
 
-    echo "👤 Now running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
-    echo "🏠 HOME is now: $HOME"
-    echo "📂 Working directory is now: $(pwd)"
+  # gosu preserva le variabili d'ambiente e esegue come utente non privilegiato
+  # Passa il controllo allo script non privilegiato
+  exec gosu "$USER" bash -c '
+      export HOME="'"$HOME_DIR"'"
+      # Cambia esplicitamente alla directory di lavoro
+      cd ${DPM_PROJECT_ROOT}
 
-    # Esegue il comando finale
-    . ~/.bashrc.d/load.sh
+      echo "👤 Now running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
+      echo "🏠 HOME is now: $HOME"
+      echo "📂 Working directory is now: $(pwd)"
 
-    if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-      docker_entrypoint_tmux "$@"
-    else
-      docker_entrypoint_common "$@"
-    fi
-' -- "$@"
+      # Esegue il comando finale
+      . ~/.bashrc.d/load.sh
 
+      if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
+        docker_entrypoint_tmux "$@"
+      else
+        docker_entrypoint_common "$@"
+      fi
+  ' -- "$@"
 
+else
+  log_warn "⚠️ gosu non disponibile o non funzionante. Probabile ambiente rootless."
+  log_warn "   Rimango con l'utente corrente: $(whoami) (UID=$(id -u), GID=$(id -g))"
+
+  # Fallback: niente cambio utente, ma normalizzi comunque HOME e cwd
+  export HOME="$HOME_DIR"
+  cd "${DPM_PROJECT_ROOT}"
+
+  echo "👤 Fallback user: $(whoami) (UID=$(id -u), GID=$(id -g))"
+  echo "🏠 HOME is now: $HOME"
+  echo "📂 Working directory is now: $(pwd)"
+
+  . ~/.bashrc.d/load.sh
+
+  if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
+    exec docker_entrypoint_tmux "$@"
+  else
+    exec docker_entrypoint_common "$@"
+  fi
+fi
 
