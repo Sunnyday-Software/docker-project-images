@@ -231,20 +231,22 @@ else
   log_warn "⚠️ gosu non disponibile o non funzionante. Probabile ambiente rootless."
   log_warn "   Rimango con l'utente corrente: $(whoami) (UID=$(id -u), GID=$(id -g))"
 
-  # Fallback: niente cambio utente, ma normalizzi comunque HOME e cwd
-  export HOME="$HOME_DIR"
-  cd "${DPM_PROJECT_ROOT}"
+  # Fallback: niente cambio utente reale, ma ricreiamo l'ambiente
+  exec bash -c '
+    export HOME="$HOME_DIR"
+    cd "$DPM_PROJECT_ROOT"
 
-  echo "👤 Fallback user: $(whoami) (UID=$(id -u), GID=$(id -g))"
-  echo "🏠 HOME is now: $HOME"
-  echo "📂 Working directory is now: $(pwd)"
+    echo "👤 Fallback user: $(whoami) (UID=$(id -u), GID=$(id -g))"
+    echo "🏠 HOME is now: $HOME"
+    echo "📂 Working directory is now: $(pwd)"
 
-  . ~/.bashrc.d/load.sh
+    . ~/.bashrc.d/load.sh
 
-  if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-    exec docker_entrypoint_tmux "$@"
-  else
-    exec docker_entrypoint_common "$@"
-  fi
+    if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
+      docker_entrypoint_tmux "$@"
+    else
+      docker_entrypoint_common "$@"
+    fi
+  ' -- "$@"
 fi
 
