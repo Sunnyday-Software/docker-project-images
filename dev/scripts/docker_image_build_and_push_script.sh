@@ -1,26 +1,54 @@
 #!/usr/bin/env bash
 
 # Parse command line arguments
+DEBUG=false
 NOPUSH=false
 CMD_PRN=false
 AMD64_PLATFORM=true
 ARM64_PLATFORM=true
-for arg in "$@"; do
-    case $arg in
+STOP_AFTER_IMAGE=""
+STOP_AFTER_FIRST_PLATFORM=false
+
+# Parse args (supporta opzioni con valore)
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --debug)
+            DEBUG=true
+            NOPUSH=true
+            shift
+            ;;
         --no-push)
             NOPUSH=true
+            shift
             ;;
         --cmd-prn)
             CMD_PRN=true
+            shift
             ;;
         --amd64-only)
             ARM64_PLATFORM=false
+            shift
             ;;
         --arm64-only)
             AMD64_PLATFORM=false
+            shift
+            ;;
+        --stop-after)
+            shift
+            STOP_AFTER_IMAGE="${1:-}"
+            if [ -z "$STOP_AFTER_IMAGE" ]; then
+                echo "❌ --stop-after richiede un nome immagine (es: --stop-after bash)"
+                exit 1
+            fi
+            shift
+            ;;
+        --stop-after-first-platform)
+            STOP_AFTER_FIRST_PLATFORM=true
+            shift
             ;;
         *)
             # Unknown option, keep it for other processing
+            shift
             ;;
     esac
 done
@@ -111,6 +139,10 @@ fi
 
 # Funzione per verificare se un'immagine esiste localmente
 image_exists_locally() {
+    if [ "$DEBUG" = true ]; then
+        log "⚠️  Pull fallito per DEBUG mode"
+        return 1
+    fi
     if [ "$CMD_PRN" = true ]; then
       return 1
     else
@@ -125,6 +157,11 @@ image_exists_locally() {
 
 # Funzione per tentare il pull di un'immagine
 try_pull_image() {
+    if [ "$DEBUG" = true ]; then
+        log "⚠️  Pull fallito per DEBUG mode"
+        return 1
+    fi
+
     local image_tag="$1"
     log "🔄 Tentativo di pull dell'immagine: $image_tag"
 
@@ -167,6 +204,9 @@ build_single_image() {
     local full_image_name="${DOCKERHUB_USERNAME}/${image_name}"
     local platform_tag=$(echo "$platform" | sed 's/linux\///')
     local image_tag="${expected_checksum}-${platform_tag}"
+    if [ "$DEBUG" = true ]; then
+        image_tag="localbuild"
+    fi
     local full_tag="${full_image_name}:${image_tag}"
 
     local latest_tag="${full_image_name}:latest-${platform_tag}"
@@ -198,12 +238,15 @@ build_single_image() {
 
       # Costruisci il comando docker build
       log "🔨 Procedo con il build dell'immagine: $full_tag"
-      local build_cmd="docker --debug build"
+      local build_cmd="docker --debug build --no-cache "
       build_cmd+=" --platform $platform"
       build_cmd+=" -f $dockerfile"
       build_cmd+=" -t $full_tag"
       build_cmd+=" --build-arg IMAGE_FULL_NAME=\"$full_tag\" "
       build_cmd+=" --build-arg PLATFORM_TAG=$platform_tag"
+      if [ "$DEBUG" = true ]; then
+        build_cmd+=" --build-arg BASE_IMAGE=\"${DOCKERHUB_USERNAME}/bash:localbuild\" "
+      fi
 
 
       # Aggiungi build args se presenti
@@ -237,6 +280,11 @@ build_single_image() {
       else
         eval "$build_cmd"
       fi
+    fi
+
+    # In DEBUG mode: nessun tag aggiuntivo (né latest-*, né checksum-arch)
+    if [ "$DEBUG" = true ]; then
+        return 0
     fi
 
     lx docker tag $full_tag $latest_tag
@@ -405,6 +453,12 @@ main() {
                             exit 1
                         fi
                     fi
+
+                    # 🛑 opzionale: fermati subito dopo la prima piattaforma
+                    if [ "$STOP_AFTER_FIRST_PLATFORM" = true ] && [ -n "$STOP_AFTER_IMAGE" ] && [ "$image_name" = "$STOP_AFTER_IMAGE" ]; then
+                        log "🛑 Stop richiesto (--stop-after-first-platform) dopo $image_name su $platform_full"
+                        return 0
+                    fi
                 else
                     log "❌ Errore durante il build di $image_name su $platform_full"
                     exit 1
@@ -418,7 +472,6 @@ main() {
         if [ "$NOPUSH" = true ]; then
             log "⏭️  Creazione manifesti saltata per $image_name (--nopush attivo)"
         elif [ "$AMD64_PLATFORM" = true ] && [ "$ARM64_PLATFORM" = true ]; then
-            # Crea manifesti solo se entrambe le piattaforme sono abilitate
             if create_manifests "$image_ref"; then
                 log "✅ Manifesti creati con successo per $image_name"
             else
@@ -430,11 +483,17 @@ main() {
         fi
 
         log "✅ === COMPLETATA IMAGE: $image_name ==="
+
+        # 🛑 Stop dopo aver completato l’immagine richiesta (tutte le piattaforme)
+        if [ -n "$STOP_AFTER_IMAGE" ] && [ "$image_name" = "$STOP_AFTER_IMAGE" ]; then
+            log "🛑 Stop richiesto: fermo il ciclo dopo l’immagine '$STOP_AFTER_IMAGE'"
+            break
+        fi
     done
 
     log ""
     if [ "$NOPUSH" = true ]; then
-        log "🎉 Build di tutte le immagini completato! (Push saltato per --nopush)"
+        log "🎉 Build di tutte le immagini completato! (Push saltato per --no-push/--debug)"
     else
         log "🎉 Build e push di tutte le immagini completati!"
     fi

@@ -15,6 +15,8 @@ ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 LABEL \
     org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
 
+USER root
+
 RUN echo "IMAGE_FULL_NAME=\"${IMAGE_FULL_NAME}\"" > /etc/image-info
 
 

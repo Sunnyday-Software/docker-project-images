@@ -16,6 +16,8 @@ ARG NODE_ENV=production
 ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV NODE_ENV=${NODE_ENV}
 
+USER root
+
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
 # Install Node.js
@@ -63,7 +65,7 @@ RUN set -eux; \
         fi; \
     fi
 
-USER devuser
+USER $USER
 WORKDIR /home/devuser
 ENV PATH="/home/devuser/node_modules/.bin:/home/devuser/.local/bin:${PATH}"
 

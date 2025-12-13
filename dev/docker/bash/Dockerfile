@@ -1,4 +1,4 @@
-FROM ubuntu:noble
+FROM debian:trixie-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG IMAGE_FULL_NAME="noname"
@@ -13,10 +13,14 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 ENV HOME_DIR=/home/$USER
 
+ENV DPM_PROJECT_ROOT=/workdir
+
 LABEL \
     org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
 
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
+
+USER root
 
 # explicitly set user/group IDs
 RUN set -eux; \
@@ -124,6 +128,8 @@ RUN mkdir -p /opt/home-template && \
 COPY docker-entrypoint.sh /usr/local/bin/
 
 RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
+
+USER $USER
 
 ENTRYPOINT ["/usr/bin/dumb-init","--","/usr/local/bin/docker-entrypoint.sh"]
 
