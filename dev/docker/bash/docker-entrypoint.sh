@@ -79,10 +79,35 @@ else
 fi
 
 log_debug_section "${IMAGE_FULL_NAME:-unknown image}"
-log_debug "🔐 Running as root: $(whoami)"
+log_debug "🔐 Running as user: $(whoami) (UID=$(id -u), GID=$(id -g))"
 log_debug "🏠 HOME_DIR (user home folder) is set to: $HOME_DIR"
 log_debug "🏠 Current HOME is: $HOME"
 log_debug "📂 Current working directory: $(pwd)"
+
+# Runtime Checks & Warnings
+if [ ! -w . ]; then
+    log_warn "⚠️  Warning: Current working directory is not writable by current user!"
+fi
+
+if [ -n "${DOCKER_HOST:-}" ]; then
+    log_debug "🐋 DOCKER_HOST detected: $DOCKER_HOST"
+fi
+
+if [[ -S /var/run/docker.sock ]]; then
+    log_debug "🐋 Docker socket found at /var/run/docker.sock"
+    if [ ! -w /var/run/docker.sock ]; then
+        log_warn "⚠️  Warning: Docker socket exists but is not writable by current user."
+    fi
+else
+    log_debug "ℹ️  No Docker socket found at /var/run/docker.sock"
+fi
+
+# Check for rootless indicators
+if [ "$(id -u)" -eq 0 ]; then
+    log_debug "👑 Process is running as root (could be native root or rootless-mapped root)"
+else
+    log_debug "👤 Process is running as non-root user $(id -u)"
+fi
 
 # File marker della versione nella home dell'utente
 HOME_VERSION_FILE="$HOME_DIR/.image-version"
