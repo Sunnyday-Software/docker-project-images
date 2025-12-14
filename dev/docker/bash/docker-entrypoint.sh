@@ -201,50 +201,95 @@ log_end_section
 # CAMBIO UTENTE (preservando l'ambiente)
 # ========================================
 
-log_debug_section "👤 Switching to user: $USER"
+# ========================================
+# SELEZIONE UTENTE DINAMICA (Rootless/Bind)
+# ========================================
 
-if command -v gosu >/dev/null 2>&1 && gosu "$USER" id -u >/dev/null 2>&1; then
-  log_debug "✅ gosu disponibile, eseguo come utente $USER"
+log_debug_section "👤 User Selection Logic"
 
-  # gosu preserva le variabili d'ambiente e esegue come utente non privilegiato
-  # Passa il controllo allo script non privilegiato
-  exec gosu "$USER" bash -c '
-      export HOME="'"$HOME_DIR"'"
-      # Cambia esplicitamente alla directory di lavoro
-      cd ${DPM_PROJECT_ROOT}
+TARGET_UID=$(stat -c '%u' .)
+TARGET_GID=$(stat -c '%g' .)
 
-      echo "👤 Now running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
-      echo "🏠 HOME is now: $HOME"
-      echo "📂 Working directory is now: $(pwd)"
+log_debug "📂 Workdir owned by UID: $TARGET_UID, GID: $TARGET_GID"
 
-      # Esegue il comando finale
-      . ~/.bashrc.d/load.sh
+# Case A: Workdir is owned by root (0).
+# This happens in:
+# 1. Native Docker, volume explicitly owned by root.
+# 2. Rootless Docker, where host user maps to container-root.
+if [ "$TARGET_UID" -eq 0 ]; then
+    log_debug "🚀 Detected Root ownership (or Rootless mode). Remaining as ROOT."
+    
+    # Per coerenza, usiamo l'ambiente root
+    export HOME="/root"
+    cd "${DPM_PROJECT_ROOT}"
 
-      if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-        docker_entrypoint_tmux "$@"
-      else
-        docker_entrypoint_common "$@"
-      fi
-  ' -- "$@"
+    # Carica lib root se esistono
+    if [ -f /root/.bashrc.d/load.sh ]; then
+        . /root/.bashrc.d/load.sh
+    fi
+    
+    echo "� Running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
 
+    if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
+        exec docker_entrypoint_tmux "$@"
+    else
+        exec docker_entrypoint_common "$@"
+    fi
 else
-  log_warn "⚠️ gosu non disponibile o non funzionante. Probabile ambiente rootless."
-  log_warn "   Rimango con l'utente corrente: $(whoami) (UID=$(id -u), GID=$(id -g))"
+    # Case B: Workdir is owned by a specific UID (not 0).
+    # We must match that UID to write.
+    
+    log_debug "🔄 Matching container user '$USER' to UID $TARGET_UID..."
 
-  # Fallback: niente cambio utente, ma normalizzi comunque HOME e cwd
-  export HOME="$HOME_DIR"
-  cd "${DPM_PROJECT_ROOT}"
+    CURRENT_UID=$(id -u "$USER")
+    CURRENT_GID=$(id -g "$GROUP")
 
-  echo "👤 Fallback user: $(whoami) (UID=$(id -u), GID=$(id -g))"
-  echo "🏠 HOME is now: $HOME"
-  echo "📂 Working directory is now: $(pwd)"
+    if [ "$TARGET_UID" != "$CURRENT_UID" ]; then
+        log_debug "  ➤ Adjusting UID $CURRENT_UID -> $TARGET_UID"
+        usermod -u "$TARGET_UID" "$USER"
+        
+        # Fix permissions on home dir (recurisve chown is expensive, but necessary if we shift UID)
+        # Assuming HOME_DIR is not huge yet (it's a fresh container)
+        log_debug "  ➤ Fixing home permissions..."
+        chown -R "$USER" "$HOME_DIR"
+    fi
 
-  . ~/.bashrc.d/load.sh
+    # Group management
+    if [ "$TARGET_GID" != "$CURRENT_GID" ]; then
+       # Check if GID exists
+       if getent group "$TARGET_GID" >/dev/null; then
+           log_debug "  ➤ Target GID $TARGET_GID exists. Attaching user to it."
+           EXISTING_GRP=$(getent group "$TARGET_GID" | cut -d: -f1)
+           usermod -g "$EXISTING_GRP" "$USER"
+       else
+           log_debug "  ➤ Adjusting GID $CURRENT_GID -> $TARGET_GID"
+           groupmod -g "$TARGET_GID" "$GROUP"
+       fi
+       chown -R :"$TARGET_GID" "$HOME_DIR"
+    fi
 
-  if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-    exec docker_entrypoint_tmux "$@"
-  else
-    exec docker_entrypoint_common "$@"
-  fi
+    log_debug "✅ User adjustment complete"
+    log_debug_section "🚀 Avvio sessione utente: $USER"
+
+    if command -v gosu >/dev/null 2>&1; then
+        exec gosu "$USER" bash -c '
+            export HOME="'"$HOME_DIR"'"
+            cd "${DPM_PROJECT_ROOT}"
+            
+            # Re-source user libs
+            . ~/.bashrc.d/load.sh
+
+            echo "👤 Now running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
+
+            if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
+                docker_entrypoint_tmux "$@"
+            else
+                docker_entrypoint_common "$@"
+            fi
+        ' -- "$@"
+    else
+        echo "❌ Critical: gosu not found. Cannot drop privileges correctly."
+        exit 1
+    fi
 fi
 
