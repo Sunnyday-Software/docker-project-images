@@ -256,9 +256,9 @@ if [ "$TARGET_UID" -eq 0 ]; then
     echo "� Running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
 
     if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-        exec docker_entrypoint_tmux "$@"
+        docker_entrypoint_tmux "$@"
     else
-        exec docker_entrypoint_common "$@"
+        docker_entrypoint_common "$@"
     fi
 else
     # Case B: Workdir is owned by a specific UID (not 0).
