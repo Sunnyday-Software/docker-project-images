@@ -22,6 +22,8 @@ ENV MAVEN_VERSION="3.9.11"
 LABEL \
     org.opencontainers.image.ref.name="${IMAGE_FULL_NAME}"
 
+USER root
+
 # Image metadata
 RUN echo "IMAGE_FULL_NAME=${IMAGE_FULL_NAME}" > /etc/image-info
 
@@ -112,4 +114,4 @@ RUN mkdir -p /opt/home-template && \
     cp -a $HOME_DIR/. /opt/home-template/ && \
     echo "✅ Home template created in /opt/home-template"
 
-
+USER $user

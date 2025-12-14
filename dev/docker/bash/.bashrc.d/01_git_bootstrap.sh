@@ -8,6 +8,9 @@ source "/opt/bash_libs/import_libs.sh"
 BRC_GIT_BOOTSTRAP_SH_S_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 lib_guard "BRC_GIT_BOOTSTRAP_SH_S_DIR" || { return 0 2>/dev/null || exit 0; }
 
+if [[ -z "${DPM_PROJECT_ROOT:-}" ]]; then
+    return 0
+fi
 
 log_debug_section "git-bootstrap"
 
