@@ -248,9 +248,14 @@ if [ "$TARGET_UID" -eq 0 ]; then
     export HOME="/root"
     cd "${DPM_PROJECT_ROOT}"
 
-    # Carica lib root se esistono
+    # Carica lib root se esistono; fallback a quelle dell'utente se mancanti
     if [ -f /root/.bashrc.d/load.sh ]; then
         . /root/.bashrc.d/load.sh
+    elif [ -f "$HOME_DIR/.bashrc.d/load.sh" ]; then
+        log_debug "ℹ️  /root/.bashrc.d/load.sh non presente; carico $HOME_DIR/.bashrc.d/load.sh"
+        . "$HOME_DIR/.bashrc.d/load.sh"
+    else
+        log_warn "⚠️  Nessun load.sh trovato in /root/.bashrc.d o in $HOME_DIR/.bashrc.d"
     fi
     
     echo "� Running as: $(whoami) (UID=$(id -u), GID=$(id -g))"

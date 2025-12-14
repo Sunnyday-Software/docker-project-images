@@ -83,9 +83,11 @@ VOLUME /opt/overrides/root_home
 # Create the .bashrc.d directory for the user (root by default in Docker)
 RUN mkdir -p $HOME_DIR/.bashrc.d
 
-# Copy all .sh files from .bashrc.d to the .bashrc.d directory
+# Copy all .sh files and the loader script from .bashrc.d to the respective .bashrc.d directories
 COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
+COPY .bashrc.d/load.sh $HOME_DIR/.bashrc.d/
 COPY root/.bashrc.d/*.sh /root/.bashrc.d/
+COPY root/.bashrc.d/load.sh /root/.bashrc.d/
 # libs comuni
 RUN mkdir -p /opt/bash_libs
 COPY bash_libs /opt/bash_libs
@@ -97,7 +99,7 @@ RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HO
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
     echo "Normalizing shell scripts under /root/.bashrc.d"; \
-    find "/root/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    find "/root/.bashrc.d" -type f \( -name '*.sh' -o -name 'load.sh' \) -print | tee /tmp/bashrcd-files.txt; \
     while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
     if grep -r $'\r' -n "/root/.bashrc.d"; then \
       echo "CRLF still present, applying sed fallback"; \
@@ -108,7 +110,7 @@ RUN set -eux; \
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
     echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
-    find "$HOME_DIR/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    find "$HOME_DIR/.bashrc.d" -type f \( -name '*.sh' -o -name 'load.sh' \) -print | tee /tmp/bashrcd-files.txt; \
     while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
     if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then \
       echo "CRLF still present, applying sed fallback"; \
