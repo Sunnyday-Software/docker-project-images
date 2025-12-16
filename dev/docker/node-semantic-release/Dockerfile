@@ -39,26 +39,26 @@ RUN set -x \
 # Copy .bashrc.d user scripts
 COPY home/ /home/devuser/
 # Create a script that sources the .bashrc.d directory
-RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
+RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME/.bashrc
 
 # Set permissions - simple and effective
 RUN set -eux; \
-    echo "Setting permissions in $HOME_DIR"; \
-    find "$HOME_DIR/.local/bin" -type f \
+    echo "Setting permissions in $HOME"; \
+    find "$HOME/.local/bin" -type f \
       -exec chown devuser:devgroup {} \; \
       -exec chmod +x {} \;
 
 # Make sure all scripts in .bashrc.d are normalized (inherited from base image)
 RUN set -eux; \
-    echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
-    if [ -d "$HOME_DIR/.bashrc.d" ]; then \
-        find "$HOME_DIR/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    echo "Normalizing shell scripts under $HOME/.bashrc.d"; \
+    if [ -d "$HOME/.bashrc.d" ]; then \
+        find "$HOME/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
         while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
-        if grep -r $'\r' -n "$HOME_DIR/.bashrc.d" 2>/dev/null; then \
+        if grep -r $'\r' -n "$HOME/.bashrc.d" 2>/dev/null; then \
           echo "CRLF still present, applying sed fallback"; \
           while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
         fi; \
-        if grep -r $'\r' -n "$HOME_DIR/.bashrc.d" 2>/dev/null; then \
+        if grep -r $'\r' -n "$HOME/.bashrc.d" 2>/dev/null; then \
             echo "❌ CRLF still present after normalization"; exit 1; \
         else \
             echo "✅ No CRLF remain"; \
@@ -88,7 +88,7 @@ RUN set -eux; \
 USER root
 
 # Crea directory template per la home (copia completa)
-RUN cp -a $HOME_DIR/. /opt/home-template/ && \
+RUN cp -a $HOME/. /opt/home-template/ && \
     echo "✅ Home template updated with node-semantic-release files"
 
 

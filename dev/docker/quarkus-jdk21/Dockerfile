@@ -74,14 +74,14 @@ EXPOSE 8080
 
 
 # Create the .bashrc.d directory for the user (root by default in Docker)
-RUN mkdir -p $HOME_DIR/.bashrc.d
+RUN mkdir -p $HOME/.bashrc.d
 
 # Copy all .sh files from .bashrc.d to the .bashrc.d directory
-COPY .bashrc.d/ $HOME_DIR/.bashrc.d/
+COPY .bashrc.d/ $HOME/.bashrc.d/
 COPY root/.bashrc.d/ /root/.bashrc.d/
 
 # Create a script that sources the .bashrc.d directory
-RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
+RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME/.bashrc
 
 
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
@@ -97,20 +97,20 @@ RUN set -eux; \
 
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
-    echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
-    find "$HOME_DIR/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
+    echo "Normalizing shell scripts under $HOME/.bashrc.d"; \
+    find "$HOME/.bashrc.d" -type f -name '*.sh' -print | tee /tmp/bashrcd-files.txt; \
     while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
-    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then \
+    if grep -r $'\r' -n "$HOME/.bashrc.d"; then \
       echo "CRLF still present, applying sed fallback"; \
       while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
     fi; \
-    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
+    if grep -r $'\r' -n "$HOME/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
 
-RUN chown -R $USER:$GROUP $HOME_DIR
+RUN chown -R $USER:$GROUP $HOME
 
 # Crea directory template per la home (copia completa)
 RUN mkdir -p /opt/home-template && \
-    cp -a $HOME_DIR/. /opt/home-template/ && \
+    cp -a $HOME/. /opt/home-template/ && \
     echo "✅ Home template created in /opt/home-template"
 
 
