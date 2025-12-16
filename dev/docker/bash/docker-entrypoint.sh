@@ -64,11 +64,10 @@ setup_extra_groups() {
 }
 
 
-
-
 # ========================================
 # OPERAZIONI PRIVILEGIATE (come root)
 # ========================================
+
 
 # Legge la versione corrente dell'immagine
 if [ -f /etc/image-info ]; then
@@ -78,44 +77,30 @@ else
     IMAGE_FULL_NAME="unknown"
 fi
 
-log_debug_section "${IMAGE_FULL_NAME:-unknown image}"
-log_debug "🔐 Running as user: $(whoami) (UID=$(id -u), GID=$(id -g))"
-log_debug "🏠 HOME_DIR (user home folder) is set to: $HOME_DIR"
+log_debug_section "Privileged startup operations for: ${IMAGE_FULL_NAME:-unknown image}"
+
+if docker_is_rootless; then
+  log_debug "🐳 Docker mode: rootless (userns)"
+  export HOME=/home/devuser
+  export USER=root
+  export ROOTLESS_ENVIRONMENT=true
+else
+  log_debug "🐳 Docker mode: rootful (o non determinabile)"
+  export ROOTLESS_ENVIRONMENT=false
+fi
+
+log_debug "🔐 Running as root: $(whoami)"
 log_debug "🏠 Current HOME is: $HOME"
 log_debug "📂 Current working directory: $(pwd)"
 
-# Runtime Checks & Warnings
-if [ ! -w . ]; then
-    log_warn "⚠️  Warning: Current working directory is not writable by current user!"
-fi
-
-if [ -n "${DOCKER_HOST:-}" ]; then
-    log_debug "🐋 DOCKER_HOST detected: $DOCKER_HOST"
-fi
-
-if [[ -S /var/run/docker.sock ]]; then
-    log_debug "🐋 Docker socket found at /var/run/docker.sock"
-    if [ ! -w /var/run/docker.sock ]; then
-        log_warn "⚠️  Warning: Docker socket exists but is not writable by current user."
-    fi
-else
-    log_debug "ℹ️  No Docker socket found at /var/run/docker.sock"
-fi
-
-# Check for rootless indicators
-if [ "$(id -u)" -eq 0 ]; then
-    log_debug "👑 Process is running as root (could be native root or rootless-mapped root)"
-else
-    log_debug "👤 Process is running as non-root user $(id -u)"
-fi
 
 # File marker della versione nella home dell'utente
-HOME_VERSION_FILE="$HOME_DIR/.image-version"
+HOME_VERSION_FILE="$HOME/.image-version"
 
 # Verifica se la home deve essere inizializzata o aggiornata
 NEEDS_UPDATE=false
 
-if [ ! -f "$HOME_DIR/.bashrc" ] || [ ! -d "$HOME_DIR/.bashrc.d" ]; then
+if [ ! -f "$HOME/.bashrc" ] || [ ! -d "$HOME/.bashrc.d" ]; then
     log_debug "🏠 Home directory not initialized"
     NEEDS_UPDATE=true
 elif [ ! -f "$HOME_VERSION_FILE" ]; then
@@ -143,30 +128,30 @@ if [ "$NEEDS_UPDATE" = true ]; then
     BACKUP_DIRS=(".ssh" ".config" ".cache")
     TEMP_BACKUP="/tmp/home-backup-$$"
 
-    if [ -d "$HOME_DIR" ]; then
+    if [ -d "$HOME" ]; then
         mkdir -p "$TEMP_BACKUP"
         for dir in "${BACKUP_DIRS[@]}"; do
-            if [ -d "$HOME_DIR/$dir" ]; then
+            if [ -d "$HOME/$dir" ]; then
                 echo "💾 Backing up $dir"
-                cp -a "$HOME_DIR/$dir" "$TEMP_BACKUP/" || true
+                cp -a "$HOME/$dir" "$TEMP_BACKUP/" || true
             fi
         done
     fi
 
     # Rimuove i file template vecchi (ma preserva i backup)
     log_debug "🧹 Cleaning old template files..."
-    find "$HOME_DIR" -mindepth 1 -maxdepth 1 ! -name '.ssh' ! -name '.config' ! -name '.cache' -exec rm -rf {} + 2>/dev/null || true
+    find "$HOME" -mindepth 1 -maxdepth 1 ! -name '.ssh' ! -name '.config' ! -name '.cache' -exec rm -rf {} + 2>/dev/null || true
 
     # Copia il nuovo template
     log_debug "📋 Copying new template..."
-    cp -a /opt/home-template/. "$HOME_DIR/"
+    cp -a /opt/home-template/. "$HOME/"
 
     # Ripristina i backup
     if [ -d "$TEMP_BACKUP" ]; then
         for dir in "${BACKUP_DIRS[@]}"; do
             if [ -d "$TEMP_BACKUP/$dir" ]; then
                 log_debug "♻️  Restoring $dir"
-                cp -an "$TEMP_BACKUP/$dir/." "$HOME_DIR/$dir/" 2>/dev/null || true
+                cp -an "$TEMP_BACKUP/$dir/." "$HOME/$dir/" 2>/dev/null || true
             fi
         done
         rm -rf "$TEMP_BACKUP"
@@ -180,39 +165,39 @@ if [ "$NEEDS_UPDATE" = true ]; then
     # Debug: mostra cosa è stato copiato
     if [ "${DEBUG:-false}" = "true" ]; then
         log_debug "📂 Home directory contents:"
-        ls -la "$HOME_DIR"
+        ls -la "$HOME"
         log_debug "📂 .bashrc.d contents:"
-        ls -la "$HOME_DIR/.bashrc.d"
+        ls -la "$HOME/.bashrc.d"
     fi
 fi
 
 # Applica override user_home ad ogni avvio (se presenti)
 if [ -d "/opt/overrides/user_home/$USER" ]; then
-  log_debug "🟪 Applying overrides from /opt/overrides/user_home/$USER to $HOME_DIR"
+  log_debug "🟪 Applying overrides from /opt/overrides/user_home/$USER to $HOME"
   # Copia sovrascrivendo, preserva permessi/attributi quando possibile
-  cp -a "/opt/overrides/user_home/$USER/." "$HOME_DIR/" 2>/dev/null || cp -r "/opt/overrides/user_home/$USER/." "$HOME_DIR/" || true
+  cp -a "/opt/overrides/user_home/$USER/." "$HOME/" 2>/dev/null || cp -r "/opt/overrides/user_home/$USER/." "$HOME/" || true
 else
   log_debug "ℹ️  No overrides directory at /opt/overrides/user_home/$USER"
 fi
 
 # Crea directory standard se non esistono
-mkdir -p "$HOME_DIR/.ssh" "$HOME_DIR/.config" "$HOME_DIR/.local/bin" "$HOME_DIR/.cache"
-chmod 700 "$HOME_DIR/.ssh" || true
+mkdir -p "$HOME/.ssh" "$HOME/.config" "$HOME/.local/bin" "$HOME/.cache"
+chmod 700 "$HOME/.ssh" || true
 
 # Applica override root_home ad ogni avvio (se presenti)
-if [ -d /opt/overrides/root_home ]; then
-  log_debug "🟥 Applying overrides from /opt/overrides/root_home to /root"
-  cp -a /opt/overrides/root_home/. /root/ 2>/dev/null || cp -r /opt/overrides/root_home/. /root/ || true
-  # Normalizza permessi minimi di sicurezza comuni (opzionale)
-  [ -d /root/.ssh ] && chmod 700 /root/.ssh || true
-else
-  log_debug "ℹ️  No overrides directory at /opt/overrides/root_home"
-fi
+# if  [ -d /opt/overrides/root_home ]; then
+#   log_debug "🟥 Applying overrides from /opt/overrides/root_home to /root"
+#   cp -a /opt/overrides/root_home/. /root/ 2>/dev/null || cp -r /opt/overrides/root_home/. /root/ || true
+#   # Normalizza permessi minimi di sicurezza comuni (opzionale)
+#   [ -d /root/.ssh ] && chmod 700 /root/.ssh || true
+# else
+#   log_debug "ℹ️  No overrides directory at /opt/overrides/root_home"
+# fi
 
-. ~/.bashrc.d/load.sh
+#. ~/.bashrc.d/load.sh
 
 # Assicura che tutti i file nella home abbiano il proprietario corretto
-chown -R $USER:$GROUP "$HOME_DIR"
+chown -R $USER:$GROUP "$HOME"
 
 setup_extra_groups
 
@@ -226,100 +211,43 @@ log_end_section
 # CAMBIO UTENTE (preservando l'ambiente)
 # ========================================
 
-# ========================================
-# SELEZIONE UTENTE DINAMICA (Rootless/Bind)
-# ========================================
+if [ "$ROOTLESS_ENVIRONMENT" = "true" ]; then
+      log_debug_section "👤 Rootless environment"
 
-log_debug_section "👤 User Selection Logic"
+      # Fallback: niente cambio utente, ma normalizzi comunque HOME e cwd
+      export HOME="$HOME"
+      cd "${DPM_PROJECT_ROOT}"
 
-TARGET_UID=$(stat -c '%u' .)
-TARGET_GID=$(stat -c '%g' .)
+      log_info "👤 Rootless user: $(whoami) (UID=$(id -u), GID=$(id -g))"
+      log_info "🏠 HOME is now: $HOME"
+      log_info "📂 Working directory is now: $(pwd)"
 
-log_debug "📂 Workdir owned by UID: $TARGET_UID, GID: $TARGET_GID"
+      . ~/.bashrc.d/load.sh
 
-# Case A: Workdir is owned by root (0).
-# This happens in:
-# 1. Native Docker, volume explicitly owned by root.
-# 2. Rootless Docker, where host user maps to container-root.
-if [ "$TARGET_UID" -eq 0 ]; then
-    log_debug "🚀 Detected Root ownership (or Rootless mode). Remaining as ROOT."
-    
-    # Per coerenza, usiamo l'ambiente root
-    export HOME="/root"
-    cd "${DPM_PROJECT_ROOT}"
-
-    # Carica lib root se esistono; fallback a quelle dell'utente se mancanti
-    if [ -f /root/.bashrc.d/load.sh ]; then
-        . /root/.bashrc.d/load.sh
-    elif [ -f "$HOME_DIR/.bashrc.d/load.sh" ]; then
-        log_debug "ℹ️  /root/.bashrc.d/load.sh non presente; carico $HOME_DIR/.bashrc.d/load.sh"
-        . "$HOME_DIR/.bashrc.d/load.sh"
-    else
-        log_warn "⚠️  Nessun load.sh trovato in /root/.bashrc.d o in $HOME_DIR/.bashrc.d"
-    fi
-    
-    echo "� Running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
-
-    if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
+      if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
         docker_entrypoint_tmux "$@"
-    else
+      else
         docker_entrypoint_common "$@"
-    fi
+      fi
 else
-    # Case B: Workdir is owned by a specific UID (not 0).
-    # We must match that UID to write.
-    
-    log_debug "🔄 Matching container user '$USER' to UID $TARGET_UID..."
+  log_debug_section "👤 Switching to user: $USER"
+  exec gosu "$USER" bash -c '
+      export HOME="'"$HOME"'"
+      # Cambia esplicitamente alla directory di lavoro
+      cd ${DPM_PROJECT_ROOT}
 
-    CURRENT_UID=$(id -u "$USER")
-    CURRENT_GID=$(id -g "$GROUP")
+      echo "👤 Now running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
+      echo "🏠 HOME is now: $HOME"
+      echo "📂 Working directory is now: $(pwd)"
 
-    if [ "$TARGET_UID" != "$CURRENT_UID" ]; then
-        log_debug "  ➤ Adjusting UID $CURRENT_UID -> $TARGET_UID"
-        usermod -u "$TARGET_UID" "$USER"
-        
-        # Fix permissions on home dir (recurisve chown is expensive, but necessary if we shift UID)
-        # Assuming HOME_DIR is not huge yet (it's a fresh container)
-        log_debug "  ➤ Fixing home permissions..."
-        chown -R "$USER" "$HOME_DIR"
-    fi
+      # Esegue il comando finale
+      . ~/.bashrc.d/load.sh
 
-    # Group management
-    if [ "$TARGET_GID" != "$CURRENT_GID" ]; then
-       # Check if GID exists
-       if getent group "$TARGET_GID" >/dev/null; then
-           log_debug "  ➤ Target GID $TARGET_GID exists. Attaching user to it."
-           EXISTING_GRP=$(getent group "$TARGET_GID" | cut -d: -f1)
-           usermod -g "$EXISTING_GRP" "$USER"
-       else
-           log_debug "  ➤ Adjusting GID $CURRENT_GID -> $TARGET_GID"
-           groupmod -g "$TARGET_GID" "$GROUP"
-       fi
-       chown -R :"$TARGET_GID" "$HOME_DIR"
-    fi
-
-    log_debug "✅ User adjustment complete"
-    log_debug_section "🚀 Avvio sessione utente: $USER"
-
-    if command -v gosu >/dev/null 2>&1; then
-        exec gosu "$USER" bash -c '
-            export HOME="'"$HOME_DIR"'"
-            cd "${DPM_PROJECT_ROOT}"
-            
-            # Re-source user libs
-            . ~/.bashrc.d/load.sh
-
-            echo "👤 Now running as: $(whoami) (UID=$(id -u), GID=$(id -g))"
-
-            if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-                docker_entrypoint_tmux "$@"
-            else
-                docker_entrypoint_common "$@"
-            fi
-        ' -- "$@"
-    else
-        echo "❌ Critical: gosu not found. Cannot drop privileges correctly."
-        exit 1
-    fi
+      if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
+        docker_entrypoint_tmux "$@"
+      else
+        docker_entrypoint_common "$@"
+      fi
+  ' -- "$@"
 fi
 

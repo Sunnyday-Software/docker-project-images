@@ -11,7 +11,7 @@ ENV TZ=UTC
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
-ENV HOME_DIR=/home/$USER
+ENV HOME=/home/$USER
 
 ENV DPM_PROJECT_ROOT=/workdir
 
@@ -35,8 +35,8 @@ RUN set -eux; \
         groupdel $OLD_GROUP; \
     fi; \
     groupadd -r $GROUP --gid=1000; \
-    useradd -r -g $GROUP --uid=1000 --home-dir=$HOME_DIR --shell=/bin/bash $USER; \
-    install --verbose --directory --owner $USER --group $GROUP --mode 1777 $HOME_DIR
+    useradd -r -g $GROUP --uid=1000 --home-dir=$HOME --shell=/bin/bash $USER; \
+    install --verbose --directory --owner $USER --group $GROUP --mode 1777 $HOME
 
 RUN set -x \
     && apt-get update -y \
@@ -81,11 +81,11 @@ RUN mkdir -p /opt/overrides/root_home
 VOLUME /opt/overrides/root_home
 
 # Create the .bashrc.d directory for the user (root by default in Docker)
-RUN mkdir -p $HOME_DIR/.bashrc.d
+RUN mkdir -p $HOME/.bashrc.d
 
 # Copy all .sh files and the loader script from .bashrc.d to the respective .bashrc.d directories
-COPY .bashrc.d/*.sh $HOME_DIR/.bashrc.d/
-COPY .bashrc.d/load.sh $HOME_DIR/.bashrc.d/
+COPY .bashrc.d/*.sh $HOME/.bashrc.d/
+COPY .bashrc.d/load.sh $HOME/.bashrc.d/
 COPY root/.bashrc.d/*.sh /root/.bashrc.d/
 COPY root/.bashrc.d/load.sh /root/.bashrc.d/
 # libs comuni
@@ -94,7 +94,7 @@ COPY bash_libs /opt/bash_libs
 RUN chmod -R 755 /opt/bash_libs
 
 # Create a script that sources the .bashrc.d directory
-RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME_DIR/.bashrc
+RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME/.bashrc
 
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
@@ -109,29 +109,27 @@ RUN set -eux; \
 
 # Make sure all scripts are executable (forza conversione + fallback sed e verifica)
 RUN set -eux; \
-    echo "Normalizing shell scripts under $HOME_DIR/.bashrc.d"; \
-    find "$HOME_DIR/.bashrc.d" -type f \( -name '*.sh' -o -name 'load.sh' \) -print | tee /tmp/bashrcd-files.txt; \
+    echo "Normalizing shell scripts under $HOME/.bashrc.d"; \
+    find "$HOME/.bashrc.d" -type f \( -name '*.sh' -o -name 'load.sh' \) -print | tee /tmp/bashrcd-files.txt; \
     while IFS= read -r f; do dos2unix -f "$f" >/dev/null 2>&1 || true; chmod 0755 "$f"; done </tmp/bashrcd-files.txt; \
-    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then \
+    if grep -r $'\r' -n "$HOME/.bashrc.d"; then \
       echo "CRLF still present, applying sed fallback"; \
       while IFS= read -r f; do sed -i 's/\\r$//' "$f" || true; done </tmp/bashrcd-files.txt; \
     fi; \
-    if grep -r $'\r' -n "$HOME_DIR/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
+    if grep -r $'\r' -n "$HOME/.bashrc.d"; then echo "❌ CRLF still present after normalization"; exit 1; else echo "✅ No CRLF remain"; fi
 
 
-RUN chown -R $USER:$GROUP $HOME_DIR
+RUN chown -R $USER:$GROUP $HOME
 
 # Crea directory template per la home (copia completa)
 RUN mkdir -p /opt/home-template && \
-    cp -a $HOME_DIR/. /opt/home-template/ && \
+    cp -a $HOME/. /opt/home-template/ && \
     echo "✅ Home template created in /opt/home-template"
 
 
 COPY docker-entrypoint.sh /usr/local/bin/
 
 RUN find /usr/local/bin -type f -name '*.sh' -exec dos2unix {} \; -exec chmod +x {} \;
-
-USER $USER
 
 ENTRYPOINT ["/usr/bin/dumb-init","--","/usr/local/bin/docker-entrypoint.sh"]
 

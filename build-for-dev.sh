@@ -97,4 +97,4 @@ EOF
 "$DPM_EXEC" --file "$TMPFILE"
 EXIT_CODE=$?
 
-"$(dirname "$0")/dev/scripts/docker_image_build_and_push_script.sh" --no-push --amd64-only --debug #--stop-after bash
+"$(dirname "$0")/dev/scripts/docker_image_build_and_push_script.sh" --no-push --amd64-only --debug --stop-after bash

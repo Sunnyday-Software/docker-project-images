@@ -114,4 +114,3 @@ RUN mkdir -p /opt/home-template && \
     cp -a $HOME_DIR/. /opt/home-template/ && \
     echo "✅ Home template created in /opt/home-template"
 
-USER $user

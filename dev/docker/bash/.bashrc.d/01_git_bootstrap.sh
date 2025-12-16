@@ -23,7 +23,7 @@ GIT_EMAIL="${DPM_GIT_USER_EMAIL:-}"
 GIT_HOST="${DPM_GIT_HTTP_HOST:-github.com}"
 
 # base config
-SAFE_HOME="${HOME:-${HOME_DIR:-/root}}"
+SAFE_HOME="${HOME:-${HOME:-/root}}"
 CONFIG_HOME="${XDG_CONFIG_HOME:-${SAFE_HOME}/.config}"
 
 log_debug_env_var DPM_GIT_USER_NAME

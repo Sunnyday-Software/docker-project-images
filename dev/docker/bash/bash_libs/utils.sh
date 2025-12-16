@@ -412,3 +412,53 @@ check_file() {
     return 0
 }
 
+
+# Rileva se stiamo girando in un ambiente Docker rootless (tipicamente userns remapping).
+# Nota: questa funzione ha senso soprattutto quando dentro al container risultiamo UID=0.
+# Ritorna:
+#   0 -> rootless
+#   1 -> non rootless / non determinabile
+docker_is_rootless() {
+    # Se non siamo root nel container, non è il caso d'uso di “rootless vs root vera”
+    # per le operazioni privilegiate: trattiamo come non-rootless.
+    if [[ "$(id -u)" -ne 0 ]]; then
+        return 1
+    fi
+
+    # In rootless/userns tipicamente la mappa UID non è identity (0 -> host_uid != 0)
+    # Esempi:
+    #   rootful:  0 0 4294967295
+    #   rootless: 0 1000 1
+    local uid_map_file="/proc/self/uid_map"
+    if [[ ! -r "$uid_map_file" ]]; then
+        return 1
+    fi
+
+    local inside outside range
+    read -r inside outside range < <(awk 'NR==1 {print $1, $2, $3}' "$uid_map_file" 2>/dev/null) || true
+
+    # Non determinabile
+    if [[ -z "${inside:-}" || -z "${outside:-}" || -z "${range:-}" ]]; then
+        return 1
+    fi
+
+    # “root vera” (rootful) tende ad avere 0->0 su un range molto grande.
+    # Euristiche:
+    #  - Se 0 mappa su un UID host != 0, è fortemente indicativo di rootless/userns.
+    #  - Se 0->0 ma il range NON è quello tipico (4294967295), è spesso userns remapping.
+    if [[ "$inside" == "0" && "$outside" != "0" ]]; then
+        return 0
+    fi
+    if [[ "$inside" == "0" && "$outside" == "0" && "$range" != "4294967295" ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+
+docker_is_rootful() {
+    docker_is_rootless && return 1
+    return 0
+}
+
