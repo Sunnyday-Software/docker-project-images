@@ -84,3 +84,4 @@ RUN mkdir -p /opt/home-template && \
     cp -a $HOME/. /opt/home-template/ && \
     echo "✅ Home template created in /opt/home-template"
 
+RUN rm -rf /var/run/docker.sock && mkdir -p /var/run
