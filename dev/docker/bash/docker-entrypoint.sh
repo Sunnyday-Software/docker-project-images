@@ -196,8 +196,19 @@ chmod 700 "$HOME/.ssh" || true
 
 #. ~/.bashrc.d/load.sh
 
-# Assicura che tutti i file nella home abbiano il proprietario corretto
-chown -R $USER:$GROUP "$HOME"
+# Assicura che i file nella home abbiano il proprietario corretto in modo efficiente
+if [ "${DPM_SKIP_CHOWN:-0}" != "1" ]; then
+    log_debug "⚖️  Verifica permessi directory HOME (selettivo)..."
+    # Cambia proprietario solo se necessario per evitare rallentamenti su volumi grandi
+    find "$HOME" \
+        \( -path "$HOME/.cache" -o -path "$HOME/.npm" -o -path "$HOME/.maven" -o -path "$HOME/.gradle" \) -prune \
+        -o ! -user "$USER" -exec chown "$USER:$GROUP" {} + 2>/dev/null || true
+    
+    # Assicura che almeno la radice della home e i file critici siano corretti
+    chown "$USER:$GROUP" "$HOME" "$HOME/.ssh" "$HOME/.bashrc" "$HOME/.bashrc.d" 2>/dev/null || true
+else
+    log_debug "⏭️  Skip chown della HOME (DPM_SKIP_CHOWN=1)"
+fi
 
 setup_extra_groups
 
@@ -222,13 +233,9 @@ if [ "$ROOTLESS_ENVIRONMENT" = "true" ]; then
       log_info "🏠 HOME is now: $HOME"
       log_info "📂 Working directory is now: $(pwd)"
 
-      . ~/.bashrc.d/load.sh
+      [ -f "$HOME/.bashrc.d/load.sh" ] && . "$HOME/.bashrc.d/load.sh"
 
-      if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-        docker_entrypoint_tmux "$@"
-      else
-        docker_entrypoint_common "$@"
-      fi
+      docker_entrypoint_common "$@"
 else
   log_debug_section "👤 Switching to user: $USER"
   exec gosu "$USER" bash -c '
@@ -241,13 +248,9 @@ else
       echo "📂 Working directory is now: $(pwd)"
 
       # Esegue il comando finale
-      . ~/.bashrc.d/load.sh
+      [ -f "$HOME/.bashrc.d/load.sh" ] && . "$HOME/.bashrc.d/load.sh"
 
-      if [ -n "${USE_TMUX+x}" ] && [[ "$USE_TMUX" =~ ^(1|true|yes|on)$ ]]; then
-        docker_entrypoint_tmux "$@"
-      else
-        docker_entrypoint_common "$@"
-      fi
+      docker_entrypoint_common "$@"
   ' -- "$@"
 fi
 
