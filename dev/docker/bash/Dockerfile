@@ -1,5 +1,7 @@
 FROM debian:trixie-slim
 
+ENV FORCED_IMAGE_BUILD="2026-02-14"
+
 ARG DEBIAN_FRONTEND=noninteractive
 ARG IMAGE_FULL_NAME="noname"
 

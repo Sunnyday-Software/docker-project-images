@@ -17,7 +17,7 @@ ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV NODE_ENV=${NODE_ENV}
 
 ENV JAVA_VERSION="25.0.2-tem"
-ENV GRAAL_VERSION="25.0.2-graal"
+#ENV GRAAL_VERSION="25.0.2-graal"
 ENV MAVEN_VERSION="3.9.12"
 
 LABEL \
@@ -54,8 +54,8 @@ ENV JDK_HOME="$SDKMAN_DIR/candidates/java/$JAVA_VERSION"
 ENV PATH="$JAVA_HOME/bin:$PATH"
 RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java $JAVA_VERSION"
 
-ENV GRAALVM_HOME="$SDKMAN_DIR/candidates/java/$GRAAL_VERSION"
-RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java $GRAAL_VERSION"
+#ENV GRAALVM_HOME="$SDKMAN_DIR/candidates/java/$GRAAL_VERSION"
+#RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java $GRAAL_VERSION"
 
 ENV PATH="$SDKMAN_DIR/candidates/maven/$MAVEN_VERSION/bin:$PATH"
 

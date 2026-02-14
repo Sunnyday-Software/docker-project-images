@@ -84,7 +84,6 @@ BUILD_ORDER=(
   IMAGE_DEVTOOLS_JDK_21_NODE_24
   IMAGE_NODE_SEMANTIC_RELEASE
   IMAGE_QUARKUS
-  IMAGE_QUARKUS_JDK21
 )
 
 # Funzione per ottenere le informazioni di un'immagine
