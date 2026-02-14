@@ -236,10 +236,11 @@ build_single_image() {
     # Se l'immagine è già disponibile, salta il build
     if [ ! "$image_available" = true ]; then
 
-      # Costruisci il comando docker build
       log "🔨 Procedo con il build dell'immagine: $full_tag"
       local build_cmd="docker --debug build --no-cache "
       build_cmd+=" --platform $platform"
+      build_cmd+=" --provenance=false"
+      build_cmd+=" --sbom=false"
       build_cmd+=" -f $dockerfile"
       build_cmd+=" -t $full_tag"
       build_cmd+=" --build-arg IMAGE_FULL_NAME=\"$full_tag\" "
@@ -360,8 +361,8 @@ create_manifests() {
                 amend_flag="--amend"
             fi
 
-            # Se non esiste, rm può fallire: non deve bloccare lo script
-            lx docker manifest rm "$target_tag" || true
+            # Best effort: se non esiste non è un errore “vero”
+            docker manifest rm "$target_tag" >/dev/null 2>&1 || true
 
             lx docker manifest create $amend_flag "$target_tag" "$@"
             lx docker manifest push "$target_tag"
