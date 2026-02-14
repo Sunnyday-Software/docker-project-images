@@ -351,32 +351,33 @@ create_manifests() {
             manifest_images+=("${full_image_name}:${expected_checksum}-${platform}")
         done
 
+        # Helper: crea (o amenda) un manifest in modo compatibile
+        create_or_amend_manifest() {
+            local target_tag="$1"; shift
+
+            local amend_flag=""
+            if docker manifest inspect "$target_tag" >/dev/null 2>&1; then
+                amend_flag="--amend"
+            fi
+
+            # Se non esiste, rm può fallire: non deve bloccare lo script
+            lx docker manifest rm "$target_tag" || true
+
+            lx docker manifest create $amend_flag "$target_tag" "$@"
+            lx docker manifest push "$target_tag"
+        }
+
         # Crea manifesto per checksum tag
         log "📋 ${full_image_name}:${expected_checksum} -> ${manifest_images[*]}"
-
-        lx docker manifest rm "${full_image_name}:${expected_checksum}"
-
-        lx docker manifest create --amend "${full_image_name}:${expected_checksum}" \
-            "${manifest_images[@]}"
-        lx docker manifest push "${full_image_name}:${expected_checksum}"
+        create_or_amend_manifest "${full_image_name}:${expected_checksum}" "${manifest_images[@]}"
 
         # Crea manifesto per version tag
         log "📋 ${full_image_name}:${expected_version} -> ${manifest_images[*]}"
-
-        lx docker manifest rm "${full_image_name}:${expected_version}"
-
-        lx docker manifest create --amend "${full_image_name}:${expected_version}" \
-            "${manifest_images[@]}"
-        lx docker manifest push "${full_image_name}:${expected_version}"
+        create_or_amend_manifest "${full_image_name}:${expected_version}" "${manifest_images[@]}"
 
         # Crea manifesto per latest tag
         log "📋 ${full_image_name}:latest -> ${manifest_images[*]}"
-
-        lx docker manifest rm "${full_image_name}:latest"
-
-        lx docker manifest create --amend "${full_image_name}:latest" \
-            "${manifest_images[@]}"
-        lx docker manifest push "${full_image_name}:latest"
+        create_or_amend_manifest "${full_image_name}:latest" "${manifest_images[@]}"
 
     else
         log "🔧 Immagine single-platform: $image_name"
