@@ -67,6 +67,16 @@ declare -A IMAGE_DEVTOOLS_JDK_21_NODE_24=(
   [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
+declare -A IMAGE_DEVTOOLS_JDK_25_NODE_24=(
+  [name]="devtools-jdk25-nodejs24"
+  [platforms]="arm64,amd64"
+  [dockerfile]="dev/docker/devtools-jdk25-nodejs24/Dockerfile"
+  [context]="dev/docker/devtools-jdk25-nodejs24"
+  [depends_on]="bash"
+  [build_args]=""
+  [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
+)
+
 declare -A IMAGE_QUARKUS=(
   [name]="quarkus"
   [platforms]="arm64,amd64"
@@ -92,6 +102,7 @@ BUILD_ORDER=(
   IMAGE_BASH
   IMAGE_MAKE
   IMAGE_DEVTOOLS_JDK_21_NODE_24
+  IMAGE_DEVTOOLS_JDK_25_NODE_24
   IMAGE_NODE_SEMANTIC_RELEASE
   IMAGE_ANTORA
   IMAGE_QUARKUS
