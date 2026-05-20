@@ -1,0 +1,14 @@
+{
+  "name": "sunnyday-antora-docs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "antora": "antora",
+    "build": "antora docs/antora-playbook.yml"
+  },
+  "dependencies": {
+    "@antora/cli": "3.1.14",
+    "@antora/site-generator": "3.1.14",
+    "asciidoctor-kroki": "0.18.1"
+  }
+}

@@ -47,6 +47,16 @@ declare -A IMAGE_NODE_SEMANTIC_RELEASE=(
     [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
 )
 
+declare -A IMAGE_ANTORA=(
+    [name]="antora"
+    [platforms]="arm64,amd64"
+    [dockerfile]="dev/docker/antora/Dockerfile"
+    [context]="dev/docker/antora"
+    [depends_on]="bash"
+    [build_args]=""
+    [env_to_args]="DOCKERHUB_USERNAME BASH_CHECKSUM"
+)
+
 declare -A IMAGE_DEVTOOLS_JDK_21_NODE_24=(
   [name]="devtools-jdk21-nodejs24"
   [platforms]="arm64,amd64"
@@ -83,6 +93,7 @@ BUILD_ORDER=(
   IMAGE_MAKE
   IMAGE_DEVTOOLS_JDK_21_NODE_24
   IMAGE_NODE_SEMANTIC_RELEASE
+  IMAGE_ANTORA
   IMAGE_QUARKUS
 )
 
