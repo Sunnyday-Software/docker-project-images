@@ -36,6 +36,8 @@ RUN set -x \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*
 
+RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 || true
+
 COPY home/ /home/devuser/
 RUN echo 'for f in ~/.bashrc.d/*.sh; do [ -f "$f" ] && source "$f"; done' >> $HOME/.bashrc
 
@@ -83,5 +85,4 @@ RUN mkdir -p /opt/antora/ui \
 RUN cp -a $HOME/. /opt/home-template/ && \
     echo "Home template updated with Antora files"
 
-USER $USER
 WORKDIR /workdir
